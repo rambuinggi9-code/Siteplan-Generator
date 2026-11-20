@@ -1,0 +1,2242 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siteplan Studio Pro v41 — Dynamic Interactive UI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dxf-parser@1.1.2/dist/dxf-parser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-2: #7c3aed;
+            --primary-glow: rgba(79, 70, 229, 0.32);
+            --accent: #f59e0b;
+            --accent-glow: rgba(245, 158, 11, 0.32);
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.32);
+
+            --bg-canvas: #f8fafc;
+            --grid-dot: rgba(148, 163, 184, 0.35);
+            --glass-bg: rgba(255, 255, 255, 0.76);
+            --glass-card: rgba(255, 255, 255, 0.72);
+            --glass-border: rgba(255, 255, 255, 0.85);
+            --border-subtle: rgba(148, 163, 184, 0.25);
+            --input-bg: rgba(255, 255, 255, 0.9);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --shadow-soft: 0 12px 36px rgba(15, 23, 42, 0.08);
+        }
+
+        body.dark-mode {
+            --bg-canvas: #0b1120;
+            --grid-dot: rgba(148, 163, 184, 0.16);
+            --glass-bg: rgba(15, 23, 42, 0.78);
+            --glass-card: rgba(30, 41, 59, 0.65);
+            --glass-border: rgba(148, 163, 184, 0.18);
+            --border-subtle: rgba(148, 163, 184, 0.16);
+            --input-bg: rgba(15, 23, 42, 0.85);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --shadow-soft: 0 14px 40px rgba(0, 0, 0, 0.45);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            color: var(--text-main);
+            background-color: var(--bg-canvas);
+            transition: background-color 0.35s ease, color 0.35s ease;
+        }
+
+        /* FULLSCREEN WORKSPACE + AMBIENT ORBS */
+        .workspace {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--bg-canvas);
+            background-image: radial-gradient(var(--grid-dot) 1.2px, transparent 1.2px);
+            background-size: 24px 24px;
+            transition: background-color 0.35s ease;
+        }
+
+        .ambient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.35;
+            pointer-events: none;
+            z-index: 0;
+            animation: orbFloat 14s ease-in-out infinite alternate;
+        }
+        .orb-1 { width: 420px; height: 420px; background: #6366f1; top: -120px; left: 10%; }
+        .orb-2 { width: 380px; height: 380px; background: #10b981; bottom: -120px; right: 8%; animation-delay: -5s; }
+        .orb-3 { width: 300px; height: 300px; background: #38bdf8; top: 30%; right: 25%; animation-delay: -9s; }
+        body.dark-mode .ambient-orb { opacity: 0.16; }
+
+        @keyframes orbFloat {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(35px, 25px) scale(1.08); }
+        }
+
+        /* FULL-BLEED INTERACTIVE CANVAS */
+        #siteplanCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 2;
+            cursor: grab;
+        }
+        #siteplanCanvas:active { cursor: grabbing; }
+
+        /* FLOATING GLASS SIDEBAR */
+        .sidebar-shell {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            bottom: 16px;
+            width: 392px;
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            border-radius: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-soft);
+            transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+        }
+        .sidebar-shell.collapsed {
+            transform: translateX(-420px);
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        .sidebar-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px 18px 24px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .sidebar-scroll::-webkit-scrollbar { width: 5px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.4); border-radius: 99px; }
+
+        /* BRAND HEADER */
+        .brand-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 18px 14px 18px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .brand-left { display: flex; align-items: center; gap: 11px; }
+        .brand-logo {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 6px 16px var(--primary-glow);
+        }
+        .brand-header h2 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 16.5px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            color: var(--text-main);
+        }
+        .brand-header p { font-size: 10.5px; color: var(--text-muted); margin-top: 1px; }
+
+        .header-actions { display: flex; align-items: center; gap: 6px; }
+        .icon-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            border: 1px solid var(--border-subtle);
+            background: var(--input-bg);
+            color: var(--text-main);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            padding: 0;
+        }
+        .icon-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        /* FLOATING RE-OPEN SIDEBAR BUTTON */
+        .sidebar-reopen {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 25;
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-soft);
+            color: var(--text-main);
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transform: translateX(-20px);
+            pointer-events: none;
+            transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            width: auto;
+        }
+        .sidebar-reopen.visible {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: all;
+        }
+        .sidebar-reopen:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* CARDS */
+        .card {
+            background: var(--glass-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 14px;
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+        .card:hover { border-color: rgba(99, 102, 241, 0.35); }
+
+        .section-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--primary);
+            margin-bottom: 11px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        body.dark-mode .section-title { color: #818cf8; }
+        .section-title::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        /* DROPZONE */
+        .dropzone {
+            position: relative;
+            border: 1.5px dashed rgba(99, 102, 241, 0.45);
+            border-radius: 12px;
+            padding: 15px 12px;
+            text-align: center;
+            background: rgba(99, 102, 241, 0.06);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            margin-bottom: 11px;
+        }
+        .dropzone:hover, .dropzone.dragover {
+            background: rgba(99, 102, 241, 0.13);
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+        .dropzone.loaded {
+            border-style: solid;
+            border-color: rgba(16, 185, 129, 0.55);
+            background: rgba(16, 185, 129, 0.08);
+        }
+        .dropzone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+        .dropzone-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+        .dropzone-text { font-size: 12px; font-weight: 600; color: var(--text-main); }
+        .dropzone-sub {
+            font-size: 10.5px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .input-group { margin-bottom: 11px; }
+        .input-group:last-child { margin-bottom: 0; }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 11.5px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+        .input-group input[type="number"], .input-group select {
+            width: 100%;
+            padding: 8.5px 11px;
+            font-size: 12.5px;
+            font-family: inherit;
+            color: var(--text-main);
+            border: 1px solid var(--border-subtle);
+            border-radius: 9px;
+            background: var(--input-bg);
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        .input-group input:focus, .input-group select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.16);
+        }
+
+        .flex-row { display: flex; gap: 8px; align-items: center; }
+        .flex-row span { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 11px;
+            background: rgba(16, 185, 129, 0.09);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 10px;
+            margin-bottom: 11px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            margin-top: 2px;
+            width: 15px;
+            height: 15px;
+            accent-color: #10b981;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .checkbox-group label {
+            margin: 0;
+            font-size: 11px;
+            font-weight: 500;
+            color: #059669;
+            cursor: pointer;
+            line-height: 1.4;
+        }
+        body.dark-mode .checkbox-group label { color: #6ee7b7; }
+
+        .alt-box {
+            padding: 11px;
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 10px;
+            margin-top: 4px;
+        }
+        .alt-box label { color: #0284c7; font-weight: 600; }
+        body.dark-mode .alt-box label { color: #7dd3fc; }
+        .alt-box small { display: block; margin-top: 5px; font-size: 10px; color: var(--text-muted); line-height: 1.35; }
+
+        .info-text {
+            font-size: 10.5px;
+            color: #10b981;
+            font-weight: 500;
+            display: block;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+
+        /* BUTTONS WITH SHINE EFFECT */
+        .action-stack { display: flex; flex-direction: column; gap: 9px; }
+        .btn-main {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            padding: 12.5px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #fff;
+        }
+        .btn-main::after {
+            content: "";
+            position: absolute;
+            top: 0; left: -120%;
+            width: 60%; height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.28), transparent);
+            transition: left 0.55s ease;
+        }
+        .btn-main:hover::after { left: 140%; }
+        .btn-main:hover { transform: translateY(-2px); }
+        .btn-main:active { transform: translateY(0); }
+        .btn-main:disabled { opacity: 0.55; cursor: not-allowed; transform: none !important; }
+
+        #btnGenerate {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            box-shadow: 0 8px 20px var(--primary-glow);
+        }
+        #btnOptimize {
+            background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+            display: none;
+            box-shadow: 0 8px 20px var(--accent-glow);
+        }
+        #btnDownload {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            display: none;
+            box-shadow: 0 8px 20px var(--success-glow);
+        }
+
+        /* STATS & CIRCULAR GAUGE */
+        .stat-box {
+            padding: 15px;
+            background: var(--glass-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            font-size: 11.5px;
+            line-height: 1.55;
+            color: var(--text-main);
+        }
+        .stat-box.reveal-pop { animation: statSlideIn 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+        @keyframes statSlideIn {
+            0% { transform: translateY(10px) scale(0.98); opacity: 0.4; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        .gauge-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 10px 0 12px 0;
+        }
+        .gauge-wrap {
+            position: relative;
+            width: 78px;
+            height: 78px;
+            flex-shrink: 0;
+        }
+        .gauge-wrap svg { width: 78px; height: 78px; transform: rotate(-90deg); }
+        .gauge-track { fill: none; stroke: var(--border-subtle); stroke-width: 7; }
+        .gauge-fill {
+            fill: none;
+            stroke-width: 7;
+            stroke-linecap: round;
+            stroke-dasharray: 201;
+            stroke-dashoffset: 201;
+            transition: stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .gauge-center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .gauge-pct {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            font-weight: 800;
+            line-height: 1;
+        }
+        .gauge-sub { font-size: 8.5px; color: var(--text-muted); margin-top: 2px; }
+
+        .gauge-info { flex: 1; }
+        .gauge-units {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.1;
+        }
+        .gauge-status {
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .variant-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 99px;
+            background: rgba(99, 102, 241, 0.14);
+            color: #4f46e5;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        body.dark-mode .variant-badge { color: #a5b4fc; }
+
+        .obligation-box {
+            margin-top: 10px;
+            padding: 10px 12px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 11px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .obligation-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11.5px;
+        }
+        .obligation-label { font-weight: 500; color: var(--text-main); }
+        .obligation-sub { display: block; font-size: 9.5px; color: var(--text-muted); font-weight: 400; }
+        .obligation-val {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 12px;
+            text-align: right;
+        }
+
+        .tip-box {
+            margin-top: 10px;
+            padding: 9px 11px;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-radius: 9px;
+            font-size: 10.5px;
+            color: #b45309;
+            line-height: 1.4;
+        }
+        body.dark-mode .tip-box { color: #fcd34d; }
+
+        hr { border: 0; border-top: 1px solid var(--border-subtle); margin: 9px 0; }
+
+        /* TOP FLOATING HUD PILL */
+        .top-hud {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            border-radius: 99px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-soft);
+            font-size: 11.5px;
+            font-weight: 500;
+            color: var(--text-main);
+            opacity: 0;
+            transform: translateY(-12px);
+            transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+        }
+        .top-hud.visible { opacity: 1; transform: translateY(0); pointer-events: all; }
+        .hud-live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25);
+            animation: pulseDot 2s infinite;
+        }
+        @keyframes pulseDot {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.28); }
+            50% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0.05); }
+        }
+
+        /* BOTTOM FLOATING LEGEND */
+        .hud-legend {
+            position: absolute;
+            bottom: 20px;
+            left: 426px;
+            z-index: 20;
+            display: flex;
+            gap: 14px;
+            padding: 9px 15px;
+            border-radius: 13px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-soft);
+            font-size: 11.5px;
+            font-weight: 500;
+            color: var(--text-main);
+            opacity: 0;
+            transform: translateY(14px);
+            transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+        }
+        .hud-legend.visible { opacity: 1; transform: translateY(0); }
+        .hud-legend.shifted { left: 20px; }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-dot { width: 11px; height: 11px; border-radius: 3px; }
+
+        /* BOTTOM-RIGHT CANVAS CONTROLS */
+        .canvas-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 20;
+            display: flex;
+            gap: 6px;
+            padding: 6px;
+            border-radius: 14px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-soft);
+            opacity: 0;
+            transform: translateY(14px);
+            transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+        }
+        .canvas-controls.visible { opacity: 1; transform: translateY(0); pointer-events: all; }
+        .ctrl-btn {
+            height: 34px;
+            min-width: 34px;
+            padding: 0 10px;
+            border-radius: 9px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-main);
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.18s ease;
+        }
+        .ctrl-btn:hover {
+            background: rgba(99, 102, 241, 0.12);
+            color: var(--primary);
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            position: absolute;
+            top: 50%;
+            left: calc(50% + 190px);
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+            z-index: 5;
+            transition: all 0.4s ease;
+        }
+        .empty-state.shifted { left: 50%; }
+        .empty-state.hidden { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
+        .empty-icon {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 16px;
+            border-radius: 22px;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.16), rgba(16, 185, 129, 0.16));
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            animation: floatSlow 3.4s ease-in-out infinite;
+        }
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .empty-state h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .empty-state p { font-size: 12.5px; color: var(--text-muted); margin-top: 5px; }
+
+        /* HOVER INSPECTOR TOOLTIP */
+        .plot-tooltip {
+            position: absolute;
+            z-index: 35;
+            padding: 7px 11px;
+            border-radius: 9px;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 500;
+            pointer-events: none;
+            opacity: 0;
+            transform: translate(-50%, -125%);
+            transition: opacity 0.15s ease;
+            white-space: nowrap;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.22);
+        }
+        .plot-tooltip.visible { opacity: 1; }
+
+        /* SCANNING OVERLAY */
+        .scan-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.18);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            z-index: 25;
+            padding-left: 380px;
+        }
+        .scan-overlay.shifted { padding-left: 0; }
+        .scan-overlay.active { opacity: 1; pointer-events: all; }
+        .scan-card {
+            padding: 22px 28px;
+            border-radius: 18px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .radar-ring {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 3px solid rgba(99, 102, 241, 0.2);
+            border-top-color: var(--primary);
+            animation: spin 0.8s linear infinite;
+            position: relative;
+        }
+        .radar-ring::after {
+            content: "";
+            position: absolute;
+            inset: 7px;
+            border-radius: 50%;
+            border: 3px solid rgba(16, 185, 129, 0.2);
+            border-bottom-color: var(--success);
+            animation: spinRev 1.1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spinRev { to { transform: rotate(-360deg); } }
+        .scan-text {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* FLOATING TOAST */
+        .toast {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            padding: 11px 16px;
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(10px);
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.22);
+            opacity: 0;
+            transform: translateY(-12px) scale(0.96);
+            transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+            z-index: 40;
+        }
+        .toast.show { opacity: 1; transform: translateY(0) scale(1); }
+        .toast-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="workspace" id="workspace">
+        <div class="ambient-orb orb-1"></div>
+        <div class="ambient-orb orb-2"></div>
+        <div class="ambient-orb orb-3"></div>
+
+        <!-- FULLSCREEN INTERACTIVE CANVAS -->
+        <canvas id="siteplanCanvas"></canvas>
+
+        <!-- RE-OPEN SIDEBAR BUTTON -->
+        <button class="sidebar-reopen" id="btnReopenSidebar">☰ Buka Panel Kontrol</button>
+
+        <!-- FLOATING GLASS SIDEBAR -->
+        <aside class="sidebar-shell" id="sidebarShell">
+            <div class="brand-header">
+                <div class="brand-left">
+                    <div class="brand-logo">❖</div>
+                    <div>
+                        <h2>Siteplan Studio</h2>
+                        <p>Interactive Yield Engine v41</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" id="btnTheme" title="Ganti Tema Light / Dark CAD">🌙</button>
+                    <button class="icon-btn" id="btnCollapse" title="Sembunyikan Panel">❮</button>
+                </div>
+            </div>
+
+            <div class="sidebar-scroll">
+                <!-- 1. UPLOAD -->
+                <div class="card">
+                    <div class="section-title">1. Lahan (DXF)</div>
+                    <div class="dropzone" id="dropzone">
+                        <input type="file" id="dxfUpload" accept=".dxf">
+                        <span class="dropzone-icon">📐</span>
+                        <div class="dropzone-text" id="dropzoneTitle">Klik atau seret file .DXF</div>
+                        <div class="dropzone-sub" id="dropzoneSub">Auto-deteksi batas lahan terluas</div>
+                    </div>
+                    <div class="input-group">
+                        <label>Satuan Ukur di AutoCAD:</label>
+                        <select id="dxfScale" class="param-input">
+                            <option value="1" selected>Meter (m)</option>
+                            <option value="0.001">Milimeter (mm)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 2. DIMENSI -->
+                <div class="card">
+                    <div class="section-title">2. Aturan Dimensi</div>
+                    <div class="input-group">
+                        <label>Mode Penataan Grid:</label>
+                        <select id="gridMode" class="param-input">
+                            <option value="adaptive" selected>Adaptif (Kombinasi 2 Arah)</option>
+                            <option value="uniform">Seragam (Satu Arah)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Lebar Jalan Lingkungan (m):</label>
+                        <input type="number" id="roadWidth" class="param-input" value="6">
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="perimeterSetback" class="param-input" checked>
+                        <label for="perimeterSetback">Kunci Akses Keliling Batas Lahan (Minimal sesuai lebar jalan agar akses antar kluster tidak tertutup)</label>
+                    </div>
+
+                    <div class="input-group">
+                        <label style="color: #ef4444;">Sensitivitas Bottleneck (Area Sempit):</label>
+                        <select id="bottleneckSensitivity" class="param-input">
+                            <option value="1.5">Rendah (Lebih padat kavling)</option>
+                            <option value="2.0">Sedang (Standar)</option>
+                            <option value="2.5" selected>Tinggi (Jalur utama sangat lega)</option>
+                            <option value="3.0">Sangat Tinggi (Anti Sempit)</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Ukuran Kavling Utama (L × P):</label>
+                        <div class="flex-row">
+                            <input type="number" id="plotWidth" class="param-input" value="6" placeholder="Lebar">
+                            <span>×</span>
+                            <input type="number" id="plotLength" class="param-input" value="10" placeholder="Panjang">
+                        </div>
+                    </div>
+
+                    <div class="input-group alt-box">
+                        <label>Ukuran Kavling Alternatif (Opsional):</label>
+                        <div class="flex-row">
+                            <input type="number" id="plotWidth2" class="param-input" value="" placeholder="Lebar">
+                            <span>×</span>
+                            <input type="number" id="plotLength2" class="param-input" value="" placeholder="Panjang">
+                        </div>
+                        <small>Corridor Lock aktif: Kavling alternatif tidak akan menyumbat jalur antar kluster.</small>
+                    </div>
+                </div>
+
+                <!-- 3. BLOK -->
+                <div class="card">
+                    <div class="section-title">3. Fasum & Blok</div>
+                    <div class="input-group">
+                        <label>Maksimal Kavling per Blok (Deret):</label>
+                        <input type="number" id="maxPerBlock" class="param-input" value="20">
+                        <span class="info-text">🛡️ Corridor Armor • RTH 5% & Makam 2% (hitungan otomatis).</span>
+                    </div>
+                </div>
+
+                <!-- AKSI -->
+                <div class="action-stack">
+                    <button class="btn-main" id="btnGenerate">✦ Generate Siteplan</button>
+                    <button class="btn-main" id="btnOptimize">↻ Perbarui Siteplan (Target 60%)</button>
+                    <button class="btn-main" id="btnDownload">↓ Download DXF (AutoCAD)</button>
+                </div>
+
+                <!-- STATISTIK -->
+                <div class="stat-box" id="stats">
+                    <em>Upload file .DXF lalu tekan Generate untuk melihat kalkulasi ruang, RTH 5%, dan lahan makam 2%.</em>
+                </div>
+            </div>
+        </aside>
+
+        <!-- TOP FLOATING HUD -->
+        <div class="top-hud" id="topHud">
+            <span class="hud-live-dot"></span>
+            <span id="hudFileInfo">Siap</span>
+        </div>
+
+        <!-- EMPTY STATE -->
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">🗺️</div>
+            <h3>Workspace Siteplan Siap</h3>
+            <p>Seret file .DXF batas lahan ke panel kiri • Bisa Zoom, Pan & Hover Inspect</p>
+        </div>
+
+        <!-- BOTTOM LEGEND -->
+        <div class="hud-legend" id="hudLegend">
+            <div class="legend-item">
+                <span class="legend-dot" style="background:#fef08a; border:1px solid #ca8a04;"></span>
+                <span>Kavling Utama</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-dot" style="background:#bae6fd; border:1px solid #0284c7;"></span>
+                <span>Kavling Alt</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-dot" style="background:rgba(148,163,184,0.2); border:1px solid #94a3b8;"></span>
+                <span>Jalan & PSU</span>
+            </div>
+        </div>
+
+        <!-- BOTTOM-RIGHT CANVAS CONTROLS -->
+        <div class="canvas-controls" id="canvasControls">
+            <button class="ctrl-btn" id="btnZoomIn" title="Zoom In">＋</button>
+            <button class="ctrl-btn" id="btnZoomOut" title="Zoom Out">－</button>
+            <button class="ctrl-btn" id="btnFitView" title="Fit ke Layar">⊡ Fit</button>
+            <button class="ctrl-btn" id="btnReplayAnim" title="Putar Ulang Animasi">▶ Replay</button>
+        </div>
+
+        <!-- HOVER INSPECTOR TOOLTIP -->
+        <div class="plot-tooltip" id="plotTooltip"></div>
+
+        <!-- SCANNING OVERLAY -->
+        <div class="scan-overlay" id="scanOverlay">
+            <div class="scan-card">
+                <div class="radar-ring"></div>
+                <div class="scan-text" id="scanText">Mengkalkulasi Siteplan...</div>
+            </div>
+        </div>
+
+        <!-- TOAST -->
+        <div class="toast" id="toast">
+            <span class="toast-dot"></span>
+            <span id="toastMsg">Siteplan berhasil dibuat!</span>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('siteplanCanvas');
+        const ctx = canvas.getContext('2d');
+        const sidebarShell = document.getElementById('sidebarShell');
+        const btnReopenSidebar = document.getElementById('btnReopenSidebar');
+        const btnCollapse = document.getElementById('btnCollapse');
+        const btnTheme = document.getElementById('btnTheme');
+        const dropzone = document.getElementById('dropzone');
+        const scanOverlay = document.getElementById('scanOverlay');
+        const scanText = document.getElementById('scanText');
+        const emptyState = document.getElementById('emptyState');
+        const hudLegend = document.getElementById('hudLegend');
+        const canvasControls = document.getElementById('canvasControls');
+        const topHud = document.getElementById('topHud');
+        const hudFileInfo = document.getElementById('hudFileInfo');
+        const plotTooltip = document.getElementById('plotTooltip');
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toastMsg');
+
+        let globalRawPolygon = null;
+        let globalGeneratedPlots = [];
+        let globalMinX = 0, globalMinY = 0, globalScale = 1;
+
+        let cachedVariants = [];
+        let currentVariantIndex = -1;
+        let isCalculating = false;
+
+        let currentAnimFrame = null;
+        let toastTimer = null;
+        let lastRenderSnapshot = null;
+
+        // Interactive Camera State (Pan & Zoom)
+        let viewZoom = 1;
+        let viewPanX = 0;
+        let viewPanY = 0;
+        let isDragging = false;
+        let dragStartX = 0, dragStartY = 0;
+        let hoveredPlotIndex = -1;
+        let isDarkMode = false;
+        let isSidebarCollapsed = false;
+
+        function showToast(message) {
+            toastMsg.innerText = message;
+            toast.classList.add('show');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 3400);
+        }
+
+        function setScanning(active, text = "Mengkalkulasi Siteplan...") {
+            scanText.innerText = text;
+            if (active) scanOverlay.classList.add('active');
+            else scanOverlay.classList.remove('active');
+        }
+
+        function getSidebarOffset() {
+            return isSidebarCollapsed ? 0 : 408;
+        }
+
+        function resetView(redraw = true) {
+            viewZoom = 1;
+            viewPanX = 0;
+            viewPanY = 0;
+            if (redraw && lastRenderSnapshot) {
+                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+            }
+        }
+
+        function resizeCanvasToFit() {
+            const dpr = window.devicePixelRatio || 1;
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
+            canvas.style.width = w + 'px';
+            canvas.style.height = h + 'px';
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            if (lastRenderSnapshot && !currentAnimFrame) {
+                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+            }
+        }
+        window.addEventListener('load', resizeCanvasToFit);
+        window.addEventListener('resize', resizeCanvasToFit);
+
+        // Theme Toggle
+        btnTheme.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            btnTheme.innerText = isDarkMode ? '☀️' : '🌙';
+            if (lastRenderSnapshot && !currentAnimFrame) {
+                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+            }
+        });
+
+        // Sidebar Collapse / Reopen
+        function toggleSidebar(collapse) {
+            isSidebarCollapsed = collapse;
+            sidebarShell.classList.toggle('collapsed', collapse);
+            btnReopenSidebar.classList.toggle('visible', collapse);
+            hudLegend.classList.toggle('shifted', collapse);
+            emptyState.classList.toggle('shifted', collapse);
+            scanOverlay.classList.toggle('shifted', collapse);
+            if (lastRenderSnapshot && !currentAnimFrame) {
+                setTimeout(() => drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots), 180);
+            }
+        }
+        btnCollapse.addEventListener('click', () => toggleSidebar(true));
+        btnReopenSidebar.addEventListener('click', () => toggleSidebar(false));
+
+        // Canvas Zoom, Pan & Hover Inspector
+        canvas.addEventListener('wheel', (e) => {
+            if (!lastRenderSnapshot || currentAnimFrame) return;
+            e.preventDefault();
+            const zoomFactor = e.deltaY < 0 ? 1.12 : 0.89;
+            const newZoom = Math.min(6, Math.max(0.5, viewZoom * zoomFactor));
+            viewZoom = newZoom;
+            drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+        }, { passive: false });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (!lastRenderSnapshot || currentAnimFrame) return;
+            isDragging = true;
+            dragStartX = e.clientX - viewPanX;
+            dragStartY = e.clientY - viewPanY;
+        });
+
+        window.addEventListener('mouseup', () => { isDragging = false; });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!lastRenderSnapshot || currentAnimFrame) return;
+
+            if (isDragging) {
+                viewPanX = e.clientX - dragStartX;
+                viewPanY = e.clientY - dragStartY;
+                plotTooltip.classList.remove('visible');
+                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+                return;
+            }
+
+            // Hover hit-test kavling
+            if (lastRenderSnapshot.finalPlots.length === 0) return;
+            const params = getTransformParams(lastRenderSnapshot.normalizedCoords, window.innerWidth, window.innerHeight, 90);
+            const mx = e.clientX, my = e.clientY;
+            let foundIdx = -1;
+
+            for (let i = 0; i < lastRenderSnapshot.finalPlots.length; i++) {
+                const pts = applyTransform(lastRenderSnapshot.finalPlots[i].coords, params);
+                if (isPointInPolygon(mx, my, pts)) {
+                    foundIdx = i;
+                    break;
+                }
+            }
+
+            if (foundIdx !== hoveredPlotIndex) {
+                hoveredPlotIndex = foundIdx;
+                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+            }
+
+            if (foundIdx !== -1) {
+                const plot = lastRenderSnapshot.finalPlots[foundIdx];
+                const label = plot.type === 'alt' ? 'Kavling Alternatif' : 'Kavling Utama';
+                plotTooltip.innerHTML = `<strong>${label} #${foundIdx + 1}</strong> • ${plot.area.toFixed(1)} m²`;
+                plotTooltip.style.left = mx + 'px';
+                plotTooltip.style.top = my + 'px';
+                plotTooltip.classList.add('visible');
+            } else {
+                plotTooltip.classList.remove('visible');
+            }
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+            hoveredPlotIndex = -1;
+            plotTooltip.classList.remove('visible');
+            if (lastRenderSnapshot && !currentAnimFrame) {
+                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+            }
+        });
+
+        function isPointInPolygon(x, y, poly) {
+            let inside = false;
+            for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+                const xi = poly[i][0], yi = poly[i][1];
+                const xj = poly[j][0], yj = poly[j][1];
+                const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-9) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+
+        // Canvas Control Buttons
+        document.getElementById('btnZoomIn').addEventListener('click', () => {
+            if (!lastRenderSnapshot) return;
+            viewZoom = Math.min(6, viewZoom * 1.2);
+            drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+        });
+        document.getElementById('btnZoomOut').addEventListener('click', () => {
+            if (!lastRenderSnapshot) return;
+            viewZoom = Math.max(0.5, viewZoom / 1.2);
+            drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+        });
+        document.getElementById('btnFitView').addEventListener('click', () => resetView(true));
+        document.getElementById('btnReplayAnim').addEventListener('click', () => {
+            if (!lastRenderSnapshot || lastRenderSnapshot.finalPlots.length === 0) return;
+            resetView(false);
+            animateCanvasReveal(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+        });
+
+        // Drag & drop visual feedback
+        ['dragenter', 'dragover'].forEach(evt => {
+            dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+        });
+        ['dragleave', 'drop'].forEach(evt => {
+            dropzone.addEventListener(evt, e => { dropzone.classList.remove('dragover'); });
+        });
+
+        document.querySelectorAll('.param-input').forEach(el => {
+            el.addEventListener('change', () => {
+                cachedVariants = [];
+                currentVariantIndex = -1;
+                document.getElementById('btnOptimize').innerText = "↻ Perbarui Siteplan (Target 60%)";
+            });
+        });
+
+        document.getElementById('dxfUpload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parser = new DxfParser();
+                    const dxfData = parser.parseSync(e.target.result);
+                    globalRawPolygon = extractLandBoundary(dxfData);
+                    if (globalRawPolygon.length > 0) {
+                        cachedVariants = [];
+                        currentVariantIndex = -1;
+                        hoveredPlotIndex = -1;
+                        resetView(false);
+
+                        const testScale = parseFloat(document.getElementById('dxfScale').value);
+                        const testArea = getCartesianArea(globalRawPolygon) * (testScale * testScale);
+
+                        dropzone.classList.add('loaded');
+                        document.getElementById('dropzoneTitle').innerText = file.name;
+                        document.getElementById('dropzoneSub').innerText = `Terdeteksi ~${testArea.toLocaleString('id-ID', {maximumFractionDigits: 0})} m²`;
+
+                        document.getElementById('btnGenerate').innerText = "✦ Generate Siteplan Sekarang";
+                        document.getElementById('btnOptimize').style.display = 'none';
+                        document.getElementById('btnDownload').style.display = 'none';
+
+                        const normalized = preparePolygon(globalRawPolygon);
+                        emptyState.classList.add('hidden');
+                        topHud.classList.add('visible');
+                        canvasControls.classList.add('visible');
+                        hudFileInfo.innerText = `${file.name} • ${testArea.toLocaleString('id-ID', {maximumFractionDigits: 0})} m²`;
+
+                        lastRenderSnapshot = { normalizedCoords: normalized, finalPlots: [] };
+                        animateBoundaryPreview(normalized);
+                        showToast(`Lahan dimuat (${testArea.toLocaleString('id-ID', {maximumFractionDigits: 0})} m²)`);
+                    } else {
+                        alert("Tidak ditemukan garis Polyline batas lahan tertutup.");
+                    }
+                } catch (err) {
+                    alert("Gagal membaca DXF: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        document.getElementById('btnGenerate').addEventListener('click', generateStandardSiteplan);
+        document.getElementById('btnOptimize').addEventListener('click', findNextOptimalSiteplan);
+        document.getElementById('btnDownload').addEventListener('click', downloadDXF);
+
+        function getCartesianArea(polygonCoords) {
+            let area = 0;
+            for (let i = 0, j = polygonCoords.length - 1; i < polygonCoords.length; j = i++) {
+                area += (polygonCoords[j][0] + polygonCoords[i][0]) * (polygonCoords[j][1] - polygonCoords[i][1]);
+            }
+            return Math.abs(area / 2);
+        }
+
+        function extractLandBoundary(dxf) {
+            let maxArea = -1;
+            let bestPolygon = [];
+            for (let i = 0; i < dxf.entities.length; i++) {
+                const entity = dxf.entities[i];
+                if (entity.type === 'LWPOLYLINE' || entity.type === 'POLYLINE') {
+                    let polygon = entity.vertices.map(v => [v.x, v.y]);
+                    if (polygon.length > 2) {
+                        const first = polygon[0];
+                        const last = polygon[polygon.length - 1];
+                        if (first[0] !== last[0] || first[1] !== last[1]) polygon.push([first[0], first[1]]);
+                        let area = getCartesianArea(polygon);
+                        if (area > maxArea) { maxArea = area; bestPolygon = polygon; }
+                    }
+                }
+            }
+            return bestPolygon;
+        }
+
+        function preparePolygon(polygon) {
+            globalScale = parseFloat(document.getElementById('dxfScale').value);
+            globalMinX = Math.min(...polygon.map(p => p[0]));
+            globalMinY = Math.min(...polygon.map(p => p[1]));
+            return polygon.map(p => [
+                (p[0] - globalMinX) * globalScale,
+                (p[1] - globalMinY) * globalScale
+            ]);
+        }
+
+        function getTopEdgeAngles(coords, maxCount = 4) {
+            let edges = [];
+            for (let i = 0; i < coords.length - 1; i++) {
+                let dx = coords[i + 1][0] - coords[i][0];
+                let dy = coords[i + 1][1] - coords[i][1];
+                let dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > 1) {
+                    let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+                    let normAngle = ((angle % 180) + 180) % 180;
+                    edges.push({ dist, angle, normAngle });
+                }
+            }
+            edges.sort((a, b) => b.dist - a.dist);
+            let selected = [];
+            for (let e of edges) {
+                let isDup = selected.some(s => {
+                    let diff = Math.abs(s.normAngle - e.normAngle);
+                    return diff < 6 || Math.abs(diff - 180) < 6;
+                });
+                if (!isDup) {
+                    selected.push(e);
+                    if (selected.length >= maxCount) break;
+                }
+            }
+            return selected.length > 0 ? selected.map(s => s.angle) : [0];
+        }
+
+        function getCentroid(coords) {
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            coords.forEach(p => {
+                if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0];
+                if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1];
+            });
+            return [minX + (maxX - minX) / 2, minY + (maxY - minY) / 2];
+        }
+
+        function rotateCoords(coords, cx, cy, angleDeg) {
+            const rad = angleDeg * (Math.PI / 180);
+            const cos = Math.cos(rad), sin = Math.sin(rad);
+            return coords.map(p => [
+                cx + (p[0] - cx) * cos - (p[1] - cy) * sin,
+                cy + (p[0] - cx) * sin + (p[1] - cy) * cos
+            ]);
+        }
+
+        function getMinDistToBoundary(px, py, polyCoords) {
+            let minDist = Infinity;
+            for (let i = 0; i < polyCoords.length - 1; i++) {
+                let x1 = polyCoords[i][0], y1 = polyCoords[i][1];
+                let x2 = polyCoords[i + 1][0], y2 = polyCoords[i + 1][1];
+                let dx = x2 - x1, dy = y2 - y1;
+                let len2 = dx * dx + dy * dy;
+                let t = 0;
+                if (len2 !== 0) t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / len2));
+                let projX = x1 + t * dx, projY = y1 + t * dy;
+                let dist = Math.sqrt((px - projX) ** 2 + (py - projY) ** 2);
+                if (dist < minDist) minDist = dist;
+            }
+            return minDist;
+        }
+
+        function isInsidePerimeterBuffer(plotCoords, boundaryCoords, bufferDist) {
+            for (let i = 0; i < plotCoords.length - 1; i++) {
+                let p1 = plotCoords[i], p2 = plotCoords[i + 1];
+                if (getMinDistToBoundary(p1[0], p1[1], boundaryCoords) < bufferDist - 0.05) return true;
+                let midX = (p1[0] + p2[0]) / 2, midY = (p1[1] + p2[1]) / 2;
+                if (getMinDistToBoundary(midX, midY, boundaryCoords) < bufferDist - 0.05) return true;
+            }
+            return false;
+        }
+
+        function filterOrphans(plots, plotW, plotL, existingPlots = []) {
+            const maxDist = Math.max(plotW, plotL) + 4.0;
+            let allPlots = plots.concat(existingPlots);
+            return plots.filter((p1) => {
+                let geom1 = p1.geometry.geometry ? p1.geometry.geometry : p1.geometry;
+                let c1 = getCentroid(geom1.type === "MultiPolygon" ? geom1.coordinates[0][0] : geom1.coordinates[0]);
+                for (let j = 0; j < allPlots.length; j++) {
+                    let p2 = allPlots[j];
+                    if (p1 === p2) continue;
+                    let geom2 = p2.geometry.geometry ? p2.geometry.geometry : p2.geometry;
+                    let c2 = getCentroid(geom2.type === "MultiPolygon" ? geom2.coordinates[0][0] : geom2.coordinates[0]);
+                    let dist = Math.sqrt(Math.pow(c1[0] - c2[0], 2) + Math.pow(c1[1] - c2[1], 2));
+                    if (dist <= maxDist) return true;
+                }
+                return false;
+            });
+        }
+
+        function getCurrentConfig() {
+            const plotWidth2Input = document.getElementById('plotWidth2').value;
+            const plotLength2Input = document.getElementById('plotLength2').value;
+            const plotWidth2 = parseFloat(plotWidth2Input);
+            const plotLength2 = parseFloat(plotLength2Input);
+            const useAltPlot = plotWidth2Input.trim() !== "" && plotLength2Input.trim() !== "" && !isNaN(plotWidth2) && !isNaN(plotLength2) && plotWidth2 > 0 && plotLength2 > 0;
+            const sensitivity = parseFloat(document.getElementById('bottleneckSensitivity').value) || 2.5;
+
+            return {
+                gridMode: document.getElementById('gridMode').value,
+                roadWidth: parseFloat(document.getElementById('roadWidth').value),
+                usePerimeterSetback: document.getElementById('perimeterSetback').checked,
+                plotWidth: parseFloat(document.getElementById('plotWidth').value),
+                plotLength: parseFloat(document.getElementById('plotLength').value),
+                plotWidth2,
+                plotLength2,
+                useAltPlot,
+                maxBlockInput: parseInt(document.getElementById('maxPerBlock').value) || 20,
+                sensitivity,
+                altSensitivity: Math.max(sensitivity, 2.0)
+            };
+        }
+
+        function computeSiteplanLayout(normalizedCoords, totalLandArea, centroid, config, variant) {
+            const { gridMode, roadWidth, usePerimeterSetback, plotWidth, plotLength, plotWidth2, plotLength2, useAltPlot, maxBlockInput, sensitivity, altSensitivity } = config;
+            const { angle, offsetX, offsetY, swapPrimary, label } = variant;
+
+            let rotatedCoords = rotateCoords(normalizedCoords, centroid[0], centroid[1], -angle);
+            if (rotatedCoords[0][0] !== rotatedCoords[rotatedCoords.length - 1][0] || rotatedCoords[0][1] !== rotatedCoords[rotatedCoords.length - 1][1]) {
+                rotatedCoords.push([...rotatedCoords[0]]);
+            }
+            const rotatedLand = turf.polygon([rotatedCoords]);
+            let rotatedPlots = [];
+
+            const firstW = swapPrimary ? plotLength : plotWidth;
+            const firstL = swapPrimary ? plotWidth : plotLength;
+            const secondW = swapPrimary ? plotWidth : plotLength;
+            const secondL = swapPrimary ? plotLength : plotWidth;
+
+            let p1 = subdivideBlock(rotatedLand, rotatedCoords, firstW, firstL, roadWidth, [], maxBlockInput, plotWidth, plotLength, sensitivity, usePerimeterSetback, offsetX, offsetY);
+            p1 = filterOrphans(p1, firstW, firstL, []);
+            p1.forEach(p => p.type = 'main');
+            rotatedPlots = rotatedPlots.concat(p1);
+
+            if (gridMode === 'adaptive') {
+                let p2 = subdivideBlock(rotatedLand, rotatedCoords, secondW, secondL, roadWidth, rotatedPlots, maxBlockInput, plotWidth, plotLength, sensitivity, usePerimeterSetback, offsetX, offsetY);
+                p2 = filterOrphans(p2, Math.max(plotWidth, plotLength), Math.max(plotWidth, plotLength), rotatedPlots);
+                p2.forEach(p => p.type = 'main');
+                rotatedPlots = rotatedPlots.concat(p2);
+            }
+
+            if (useAltPlot) {
+                const altFirstW = swapPrimary ? plotLength2 : plotWidth2;
+                const altFirstL = swapPrimary ? plotWidth2 : plotLength2;
+                const altSecondW = swapPrimary ? plotWidth2 : plotLength2;
+                const altSecondL = swapPrimary ? plotLength2 : plotWidth2;
+
+                let p3 = subdivideBlock(rotatedLand, rotatedCoords, altFirstW, altFirstL, roadWidth, rotatedPlots, maxBlockInput, plotWidth, plotLength, altSensitivity, usePerimeterSetback, offsetX, offsetY);
+                p3 = filterOrphans(p3, plotWidth2, plotLength2, rotatedPlots);
+                p3.forEach(p => p.type = 'alt');
+                rotatedPlots = rotatedPlots.concat(p3);
+
+                if (gridMode === 'adaptive') {
+                    let p4 = subdivideBlock(rotatedLand, rotatedCoords, altSecondW, altSecondL, roadWidth, rotatedPlots, maxBlockInput, plotWidth, plotLength, altSensitivity, usePerimeterSetback, offsetX, offsetY);
+                    p4 = filterOrphans(p4, Math.max(plotWidth2, plotLength2), Math.max(plotWidth2, plotLength2), rotatedPlots);
+                    p4.forEach(p => p.type = 'alt');
+                    rotatedPlots = rotatedPlots.concat(p4);
+                }
+            }
+
+            const finalPlots = rotatedPlots.map(plot => {
+                let geom = plot.geometry.geometry ? plot.geometry.geometry : plot.geometry;
+                let pCoords = geom.type === "MultiPolygon" ? geom.coordinates[0][0] : geom.coordinates[0];
+                const backRotated = rotateCoords(pCoords, centroid[0], centroid[1], angle);
+                return { coords: backRotated, area: plot.area, type: plot.type };
+            });
+
+            let totalSaleableArea = 0, countMain = 0, countAlt = 0;
+            finalPlots.forEach(plot => {
+                totalSaleableArea += plot.area;
+                if (plot.type === 'alt') countAlt++;
+                else countMain++;
+            });
+
+            return {
+                finalPlots,
+                totalSaleableArea,
+                requiredRTHArea: totalLandArea * 0.05,
+                requiredMakamArea: totalLandArea * 0.02,
+                countMain,
+                countAlt,
+                saleablePercentage: (totalSaleableArea / totalLandArea) * 100,
+                label
+            };
+        }
+
+        // ==============================================================
+        // ENGINE ANIMASI 3-TAHAP (BOUNDARY TRACE + LASER SWEEP + SPRING)
+        // ==============================================================
+        function easeOutBack(x) {
+            const c1 = 1.70158;
+            const c3 = c1 + 1;
+            return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+        }
+
+        function getThemeColors() {
+            if (isDarkMode) {
+                return {
+                    landFill: 'rgba(30, 41, 59, 0.72)',
+                    landStroke: '#64748b',
+                    mainFill: 'rgba(250, 204, 21, 0.85)',
+                    mainStroke: '#eab308',
+                    altFill: 'rgba(56, 189, 248, 0.85)',
+                    altStroke: '#0ea5e9',
+                    hoverStroke: '#ffffff'
+                };
+            }
+            return {
+                landFill: 'rgba(255, 255, 255, 0.88)',
+                landStroke: '#94a3b8',
+                mainFill: '#fef08a',
+                mainStroke: '#ca8a04',
+                altFill: '#bae6fd',
+                altStroke: '#0284c7',
+                hoverStroke: '#4f46e5'
+            };
+        }
+
+        function drawPolygonScaled(pixelCoords, fillColor, strokeColor, scale, alpha, lineWidth = 1, glow = false) {
+            if (scale <= 0.01 || alpha <= 0.01) return;
+            let cx = 0, cy = 0;
+            const n = pixelCoords.length - 1;
+            for (let i = 0; i < n; i++) { cx += pixelCoords[i][0]; cy += pixelCoords[i][1]; }
+            cx /= n; cy /= n;
+
+            ctx.save();
+            ctx.globalAlpha = Math.min(1, alpha);
+            if (glow) {
+                ctx.shadowColor = isDarkMode ? 'rgba(129, 140, 248, 0.75)' : 'rgba(79, 70, 229, 0.45)';
+                ctx.shadowBlur = 12;
+            }
+            ctx.beginPath();
+            for (let i = 0; i < pixelCoords.length; i++) {
+                const px = cx + (pixelCoords[i][0] - cx) * scale;
+                const py = cy + (pixelCoords[i][1] - cy) * scale;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            if (fillColor) {
+                ctx.fillStyle = fillColor;
+                ctx.fill();
+            }
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // Menggambar batas lahan secara bertahap seperti pena AutoCAD
+        function drawTracedBoundary(pts, progress, colors) {
+            let totalLen = 0;
+            let segLens = [];
+            for (let i = 0; i < pts.length - 1; i++) {
+                const l = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]);
+                segLens.push(l);
+                totalLen += l;
+            }
+            const targetLen = totalLen * Math.min(1, progress);
+
+            // Isi fill secara halus setelah trace melewati 55%
+            if (progress > 0.55) {
+                const fillAlpha = Math.min(1, (progress - 0.55) / 0.45);
+                drawPolygonScaled(pts, colors.landFill, 'transparent', 1, fillAlpha, 0);
+            }
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(pts[0][0], pts[0][1]);
+            let acc = 0;
+            let tipX = pts[0][0], tipY = pts[0][1];
+
+            for (let i = 0; i < segLens.length; i++) {
+                if (acc + segLens[i] <= targetLen) {
+                    ctx.lineTo(pts[i + 1][0], pts[i + 1][1]);
+                    acc += segLens[i];
+                    tipX = pts[i + 1][0];
+                    tipY = pts[i + 1][1];
+                } else {
+                    const rem = (targetLen - acc) / (segLens[i] || 1);
+                    tipX = pts[i][0] + (pts[i + 1][0] - pts[i][0]) * rem;
+                    tipY = pts[i][1] + (pts[i + 1][1] - pts[i][1]) * rem;
+                    ctx.lineTo(tipX, tipY);
+                    break;
+                }
+            }
+            ctx.strokeStyle = progress < 1 ? '#6366f1' : colors.landStroke;
+            ctx.lineWidth = progress < 1 ? 2.2 : 1.4;
+            ctx.stroke();
+
+            // Titik cahaya di ujung pena
+            if (progress < 1) {
+                ctx.beginPath();
+                ctx.arc(tipX, tipY, 4.5, 0, Math.PI * 2);
+                ctx.fillStyle = '#6366f1';
+                ctx.shadowColor = '#6366f1';
+                ctx.shadowBlur = 12;
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        function animateBoundaryPreview(normalizedCoords) {
+            if (currentAnimFrame) cancelAnimationFrame(currentAnimFrame);
+            const w = window.innerWidth, h = window.innerHeight;
+            const params = getTransformParams(normalizedCoords, w, h, 90);
+            const pts = applyTransform(normalizedCoords, params);
+            const colors = getThemeColors();
+            const start = performance.now();
+            const dur = 520;
+
+            function step(now) {
+                const t = Math.min(1, (now - start) / dur);
+                const eased = 1 - Math.pow(1 - t, 3);
+                ctx.clearRect(0, 0, w, h);
+                drawTracedBoundary(pts, eased, colors);
+                if (t < 1) currentAnimFrame = requestAnimationFrame(step);
+                else {
+                    currentAnimFrame = null;
+                    drawStaticSnapshot(normalizedCoords, []);
+                }
+            }
+            currentAnimFrame = requestAnimationFrame(step);
+        }
+
+        function drawStaticSnapshot(normalizedCoords, finalPlots) {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const params = getTransformParams(normalizedCoords, w, h, 90);
+            const colors = getThemeColors();
+            ctx.clearRect(0, 0, w, h);
+
+            drawPolygonScaled(applyTransform(normalizedCoords, params), colors.landFill, colors.landStroke, 1, 1, 1.4);
+
+            finalPlots.forEach((plot, idx) => {
+                const canvasPlot = applyTransform(plot.coords, params);
+                const isHovered = idx === hoveredPlotIndex;
+                const fill = plot.type === 'alt' ? colors.altFill : colors.mainFill;
+                const stroke = isHovered ? colors.hoverStroke : (plot.type === 'alt' ? colors.altStroke : colors.mainStroke);
+                drawPolygonScaled(canvasPlot, fill, stroke, isHovered ? 1.07 : 1, 1, isHovered ? 2.2 : 1, isHovered);
+            });
+        }
+
+        function animateCanvasReveal(normalizedCoords, finalPlots) {
+            if (currentAnimFrame) cancelAnimationFrame(currentAnimFrame);
+
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const params = getTransformParams(normalizedCoords, w, h, 90);
+            const canvasLand = applyTransform(normalizedCoords, params);
+            const colors = getThemeColors();
+
+            // Hitung rentang diagonal untuk sapuan laser
+            let minDiag = Infinity, maxDiag = -Infinity;
+            canvasLand.forEach(p => {
+                const d = p[0] + p[1];
+                if (d < minDiag) minDiag = d;
+                if (d > maxDiag) maxDiag = d;
+            });
+
+            const prepared = finalPlots.map(plot => {
+                const pts = applyTransform(plot.coords, params);
+                const c = getCentroid(pts);
+                const diagNorm = (c[0] + c[1] - minDiag) / Math.max(1, maxDiag - minDiag);
+                return { pts, type: plot.type, diagNorm };
+            });
+
+            const traceDur = 360;
+            const sweepStart = 220;
+            const sweepDur = 760;
+            const itemPopDur = 260;
+            const totalDur = sweepStart + sweepDur + itemPopDur + 60;
+            const startTime = performance.now();
+
+            function step(now) {
+                const elapsed = now - startTime;
+                ctx.clearRect(0, 0, w, h);
+
+                // Stage 1: Boundary Trace
+                const traceT = Math.min(1, elapsed / traceDur);
+                const traceEased = 1 - Math.pow(1 - traceT, 3);
+                drawTracedBoundary(canvasLand, traceEased, colors);
+
+                // Stage 2: Laser Sweep + Kavling Spring Pop-In
+                if (elapsed >= sweepStart) {
+                    const sweepT = Math.min(1, (elapsed - sweepStart) / sweepDur);
+                    const sweepPos = minDiag + (maxDiag - minDiag) * sweepT;
+
+                    for (let i = 0; i < prepared.length; i++) {
+                        const item = prepared[i];
+                        const itemStart = sweepStart + item.diagNorm * sweepDur;
+                        const localT = (elapsed - itemStart) / itemPopDur;
+                        if (localT <= 0) continue;
+
+                        const clamped = Math.min(1, localT);
+                        const scale = clamped < 1 ? easeOutBack(clamped) : 1;
+                        const flashGlow = clamped < 0.65;
+                        const fill = item.type === 'alt' ? colors.altFill : colors.mainFill;
+                        const stroke = item.type === 'alt' ? colors.altStroke : colors.mainStroke;
+                        drawPolygonScaled(item.pts, fill, stroke, scale, clamped, 1, flashGlow);
+                    }
+
+                    // Garis laser diagonal lembut selama sapuan aktif
+                    if (sweepT < 1) {
+                        ctx.save();
+                        const grad = ctx.createLinearGradient(0, 0, w, h);
+                        grad.addColorStop(0, 'rgba(99, 102, 241, 0.0)');
+                        grad.addColorStop(0.5, 'rgba(99, 102, 241, 0.55)');
+                        grad.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+                        ctx.strokeStyle = grad;
+                        ctx.lineWidth = 3;
+                        ctx.shadowColor = '#6366f1';
+                        ctx.shadowBlur = 16;
+                        ctx.beginPath();
+                        ctx.moveTo(sweepPos, 0);
+                        ctx.lineTo(0, sweepPos);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+
+                if (elapsed < totalDur) {
+                    currentAnimFrame = requestAnimationFrame(step);
+                } else {
+                    currentAnimFrame = null;
+                    drawStaticSnapshot(normalizedCoords, finalPlots);
+                }
+            }
+
+            currentAnimFrame = requestAnimationFrame(step);
+        }
+
+        function animateNumber(el, targetVal, decimals = 0, suffix = "") {
+            const start = performance.now();
+            const dur = 680;
+            function tick(now) {
+                const t = Math.min(1, (now - start) / dur);
+                const eased = 1 - Math.pow(1 - t, 3);
+                const val = targetVal * eased;
+                el.innerText = val.toLocaleString('id-ID', {
+                    minimumFractionDigits: decimals,
+                    maximumFractionDigits: decimals
+                }) + suffix;
+                if (t < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        }
+
+        function renderSiteplanResult(result, normalizedCoords, totalLandArea, config, optionInfoText = "") {
+            globalGeneratedPlots = result.finalPlots;
+            lastRenderSnapshot = { normalizedCoords, finalPlots: result.finalPlots };
+            hoveredPlotIndex = -1;
+            resetView(false);
+
+            emptyState.classList.add('hidden');
+            hudLegend.classList.add('visible');
+            canvasControls.classList.add('visible');
+            topHud.classList.add('visible');
+
+            animateCanvasReveal(normalizedCoords, result.finalPlots);
+
+            const pct = result.saleablePercentage;
+            const targetPct = 60;
+            const gaugeRatio = Math.min(1, pct / targetPct);
+            const circumference = 201; // 2 * PI * 32
+            const dashOffset = circumference * (1 - gaugeRatio);
+            const barColor = pct >= targetPct ? '#10b981' : (pct >= 50 ? '#f59e0b' : '#ef4444');
+            const targetStatus = pct >= targetPct ? '✓ Target 60% Tercapai!' : `Kurang ${(targetPct - pct).toFixed(1)}% dari 60%`;
+
+            const remainingRoadPsu = Math.max(0, totalLandArea - result.totalSaleableArea - result.requiredRTHArea);
+
+            let tipHtml = "";
+            if (pct < targetPct && optionInfoText !== "") {
+                let tips = [];
+                if (config.usePerimeterSetback) tips.push("matikan <b>Kunci Akses Keliling</b>");
+                if (!config.useAltPlot) tips.push("isi <b>Kavling Alternatif</b>");
+                if (config.sensitivity > 1.5) tips.push("turunkan <b>Sensitivitas Bottleneck</b>");
+                if (tips.length > 0) {
+                    tipHtml = `<div class="tip-box">💡 <strong>Tips menuju 60%:</strong> Coba ${tips.join(", atau ")}, lalu klik Perbarui Siteplan.</div>`;
+                }
+            }
+
+            const statsEl = document.getElementById('stats');
+            statsEl.classList.remove('reveal-pop');
+            void statsEl.offsetWidth;
+            statsEl.classList.add('reveal-pop');
+
+            statsEl.innerHTML = `
+                ${optionInfoText ? `<div class="variant-badge">${optionInfoText}</div>` : ''}
+                <div class="gauge-header">
+                    <div class="gauge-wrap">
+                        <svg viewBox="0 0 78 78">
+                            <circle class="gauge-track" cx="39" cy="39" r="32"></circle>
+                            <circle class="gauge-fill" id="gaugeFill" cx="39" cy="39" r="32" style="stroke:${barColor};"></circle>
+                        </svg>
+                        <div class="gauge-center">
+                            <span class="gauge-pct" id="kpiPct" style="color:${barColor};">0%</span>
+                            <span class="gauge-sub">Target 60%</span>
+                        </div>
+                    </div>
+                    <div class="gauge-info">
+                        <div class="gauge-units" id="kpiUnits">0 unit</div>
+                        <div class="gauge-status" style="color:${barColor};">${targetStatus}</div>
+                        <div style="font-size:10.5px; color:var(--text-muted); margin-top:2px;">
+                            Saleable: ${result.totalSaleableArea.toLocaleString('id-ID', {maximumFractionDigits: 1})} m²
+                        </div>
+                    </div>
+                </div>
+
+                <strong>Total Luas Lahan:</strong> ${totalLandArea.toLocaleString('id-ID', {maximumFractionDigits: 2})} m²<br>
+                <strong>Sisa Jalan & PSU Lainnya:</strong> ${remainingRoadPsu.toLocaleString('id-ID', {maximumFractionDigits: 2})} m²
+
+                <div class="obligation-box">
+                    <div class="obligation-row">
+                        <span class="obligation-label">
+                            🌿 Kewajiban RTH (5%)
+                            <span class="obligation-sub">Alokasi dalam lahan (hitungan saja)</span>
+                        </span>
+                        <span class="obligation-val" style="color:#10b981;">${result.requiredRTHArea.toLocaleString('id-ID', {maximumFractionDigits: 2})} m²</span>
+                    </div>
+                    <hr style="margin:2px 0;">
+                    <div class="obligation-row">
+                        <span class="obligation-label">
+                            🪦 Lahan Makam (2%)
+                            <span class="obligation-sub">Wajib disediakan di luar lahan</span>
+                        </span>
+                        <span class="obligation-val" style="color:#8b5cf6;">${result.requiredMakamArea.toLocaleString('id-ID', {maximumFractionDigits: 2})} m²</span>
+                    </div>
+                </div>
+
+                <hr>
+                <span style="color:#eab308; font-weight: 600;">■ Utama (${config.plotWidth}×${config.plotLength}): ${result.countMain} unit</span><br>
+                ${config.useAltPlot ? `<span style="color:#0ea5e9; font-weight: 600;">■ Alt (${config.plotWidth2}×${config.plotLength2}): ${result.countAlt} unit</span>` : ''}
+                ${tipHtml}
+            `;
+
+            animateNumber(document.getElementById('kpiUnits'), result.countMain + result.countAlt, 0, " unit");
+            animateNumber(document.getElementById('kpiPct'), pct, 1, "%");
+            requestAnimationFrame(() => {
+                const gaugeEl = document.getElementById('gaugeFill');
+                if (gaugeEl) gaugeEl.style.strokeDashoffset = dashOffset;
+            });
+
+            document.getElementById('btnOptimize').style.display = 'flex';
+            document.getElementById('btnDownload').style.display = 'flex';
+
+            hudFileInfo.innerText = `${result.countMain + result.countAlt} Unit • ${pct.toFixed(1)}% Efektif • RTH 5% & Makam 2%`;
+            showToast(`Selesai! ${result.countMain + result.countAlt} unit terbentuk (${pct.toFixed(1)}% efektif)`);
+        }
+
+        function generateStandardSiteplan() {
+            if (!globalRawPolygon) {
+                alert("Silakan upload file DXF batas lahan terlebih dahulu.");
+                return;
+            }
+            if (isCalculating) return;
+            isCalculating = true;
+            resizeCanvasToFit();
+
+            const btnGen = document.getElementById('btnGenerate');
+            const btnOpt = document.getElementById('btnOptimize');
+            btnGen.disabled = true;
+            btnOpt.disabled = true;
+            setScanning(true, "Menata Kavling & Akses Jalan...");
+
+            cachedVariants = [];
+            currentVariantIndex = -1;
+
+            setTimeout(() => {
+                const config = getCurrentConfig();
+                const normalizedCoords = preparePolygon(globalRawPolygon);
+                const totalLandArea = getCartesianArea(normalizedCoords);
+                const centroid = getCentroid(normalizedCoords);
+                const topAngles = getTopEdgeAngles(normalizedCoords, 1);
+
+                const result = computeSiteplanLayout(normalizedCoords, totalLandArea, centroid, config, {
+                    angle: topAngles[0],
+                    offsetX: 0,
+                    offsetY: 0,
+                    swapPrimary: false,
+                    label: "Standar (Sisi Terpanjang)"
+                });
+
+                setScanning(false);
+                renderSiteplanResult(result, normalizedCoords, totalLandArea, config, "Opsi Standar (Sisi Terpanjang)");
+                btnGen.innerText = "✦ Generate Ulang Standar";
+                btnOpt.innerText = "↻ Perbarui Siteplan (Target 60%)";
+                btnGen.disabled = false;
+                btnOpt.disabled = false;
+                isCalculating = false;
+            }, 90);
+        }
+
+        function findNextOptimalSiteplan() {
+            if (!globalRawPolygon) {
+                alert("Silakan upload file DXF batas lahan terlebih dahulu.");
+                return;
+            }
+            if (isCalculating) return;
+            resizeCanvasToFit();
+
+            const config = getCurrentConfig();
+            const normalizedCoords = preparePolygon(globalRawPolygon);
+            const totalLandArea = getCartesianArea(normalizedCoords);
+            const centroid = getCentroid(normalizedCoords);
+
+            if (cachedVariants.length > 0) {
+                currentVariantIndex = (currentVariantIndex + 1) % cachedVariants.length;
+                const chosen = cachedVariants[currentVariantIndex];
+                renderSiteplanResult(
+                    chosen, normalizedCoords, totalLandArea, config,
+                    `Opsi #${currentVariantIndex + 1}/${cachedVariants.length} — ${chosen.label}`
+                );
+                const nextNum = ((currentVariantIndex + 1) % cachedVariants.length) + 1;
+                document.getElementById('btnOptimize').innerText = `↻ Perbarui Siteplan (Opsi #${nextNum}/${cachedVariants.length})`;
+                return;
+            }
+
+            const topAngles = getTopEdgeAngles(normalizedCoords, 3);
+            const shiftX = config.plotWidth * 0.5;
+            const shiftY = (config.plotLength + config.roadWidth) * 0.5;
+
+            const candidateSpecs = [
+                { angle: topAngles[0], offsetX: 0, offsetY: 0, swapPrimary: false, label: "Sisi #1 (Standar)" },
+                { angle: topAngles[0], offsetX: 0, offsetY: 0, swapPrimary: true, label: "Sisi #1 (Putar Blok 90°)" },
+                { angle: topAngles[0], offsetX: shiftX, offsetY: 0, swapPrimary: false, label: "Sisi #1 (Geser Grid X)" },
+                { angle: topAngles[0], offsetX: 0, offsetY: shiftY, swapPrimary: false, label: "Sisi #1 (Geser Grid Y)" },
+                { angle: topAngles[0], offsetX: shiftX, offsetY: shiftY, swapPrimary: true, label: "Sisi #1 (Putar 90° + Geser)" },
+                { angle: topAngles[0] + 45, offsetX: 0, offsetY: 0, swapPrimary: false, label: "Diagonal +45°" },
+                { angle: topAngles[0] - 45, offsetX: 0, offsetY: 0, swapPrimary: false, label: "Diagonal -45°" },
+                { angle: 0, offsetX: 0, offsetY: 0, swapPrimary: false, label: "Grid Tegak Lurus (0°)" }
+            ];
+
+            if (topAngles.length > 1) {
+                candidateSpecs.push({ angle: topAngles[1], offsetX: 0, offsetY: 0, swapPrimary: false, label: "Sisi Terpanjang #2" });
+                candidateSpecs.push({ angle: topAngles[1], offsetX: 0, offsetY: 0, swapPrimary: true, label: "Sisi #2 (Putar 90°)" });
+            }
+            if (topAngles.length > 2) {
+                candidateSpecs.push({ angle: topAngles[2], offsetX: 0, offsetY: 0, swapPrimary: false, label: "Sisi Terpanjang #3" });
+                candidateSpecs.push({ angle: topAngles[2], offsetX: 0, offsetY: 0, swapPrimary: true, label: "Sisi #3 (Putar 90°)" });
+            }
+
+            isCalculating = true;
+            const btnGen = document.getElementById('btnGenerate');
+            const btnOpt = document.getElementById('btnOptimize');
+            btnGen.disabled = true;
+            btnOpt.disabled = true;
+
+            let evaluated = [];
+            let idx = 0;
+
+            function processNextCandidate() {
+                if (idx >= candidateSpecs.length) {
+                    evaluated.sort((a, b) => b.saleablePercentage - a.saleablePercentage);
+
+                    let unique = [];
+                    evaluated.forEach(item => {
+                        let isDup = unique.some(u =>
+                            Math.abs(u.saleablePercentage - item.saleablePercentage) < 0.05 &&
+                            u.countMain === item.countMain &&
+                            u.countAlt === item.countAlt
+                        );
+                        if (!isDup) unique.push(item);
+                    });
+
+                    cachedVariants = unique.length > 0 ? unique : evaluated;
+                    currentVariantIndex = 0;
+
+                    setScanning(false);
+                    const best = cachedVariants[0];
+                    renderSiteplanResult(
+                        best, normalizedCoords, totalLandArea, config,
+                        `Opsi Terbaik #1/${cachedVariants.length} — ${best.label}`
+                    );
+
+                    const nextNum = cachedVariants.length > 1 ? 2 : 1;
+                    btnOpt.innerText = `↻ Perbarui Siteplan (Opsi #${nextNum}/${cachedVariants.length})`;
+                    btnGen.disabled = false;
+                    btnOpt.disabled = false;
+                    isCalculating = false;
+                    return;
+                }
+
+                setScanning(true, `Memindai Opsi Efisiensi (${idx + 1}/${candidateSpecs.length})...`);
+                try {
+                    const res = computeSiteplanLayout(normalizedCoords, totalLandArea, centroid, config, candidateSpecs[idx]);
+                    if (res.finalPlots.length > 0) evaluated.push(res);
+                } catch (e) {}
+                idx++;
+                setTimeout(processNextCandidate, 18);
+            }
+
+            processNextCandidate();
+        }
+
+        function subdivideBlock(landPolygon, landBoundaryCoords, width, length, mainRoad, existingPlots, maxBlockSize, baseMainW, baseMainL, sensitivity, usePerimeterSetback, offsetX = 0, offsetY = 0) {
+            const generatedPlots = [];
+            const bbox = turf.bbox(landPolygon);
+            const blockRoad = mainRoad;
+
+            const isRotated = width > length;
+            const plotsPerLine = Math.ceil(maxBlockSize / 2);
+            const plotsPerRow = isRotated ? plotsPerLine : 2;
+            const plotsPerColumn = isRotated ? 2 : plotsPerLine;
+
+            let x = bbox[0] - offsetX;
+            let countX = 0;
+
+            while (x < bbox[2]) {
+                let y = bbox[1] - offsetY;
+                let countY = 0;
+
+                while (y < bbox[3]) {
+                    const plotCoords = [
+                        [x, y], [x + width, y], [x + width, y + length], [x, y + length], [x, y]
+                    ];
+                    const plotRect = turf.polygon([plotCoords]);
+
+                    if (usePerimeterSetback && isInsidePerimeterBuffer(plotCoords, landBoundaryCoords, mainRoad)) {
+                        y += length;
+                        countY++;
+                        if (countY >= plotsPerRow) { y += blockRoad; countY = 0; }
+                        continue;
+                    }
+
+                    let roadClaims = [];
+                    let frontRoadX1 = x, frontRoadY1 = y, frontRoadX2 = x + width, frontRoadY2 = y + length;
+
+                    if (!isRotated) {
+                        if (countY === 0) { frontRoadY1 -= blockRoad; frontRoadY2 = y; }
+                        else { frontRoadY1 = y + length; frontRoadY2 = y + length + blockRoad; }
+                    } else {
+                        if (countX === 0) { frontRoadX1 -= blockRoad; frontRoadX2 = x; }
+                        else { frontRoadX1 = x + width; frontRoadX2 = x + width + blockRoad; }
+                    }
+
+                    const mainRoadRect = turf.polygon([[
+                        [frontRoadX1, frontRoadY1], [frontRoadX2, frontRoadY1],
+                        [frontRoadX2, frontRoadY2], [frontRoadX1, frontRoadY2], [frontRoadX1, frontRoadY1]
+                    ]]);
+                    roadClaims.push(mainRoadRect);
+
+                    if (!isRotated) {
+                        let sideMinY = Math.min(y, frontRoadY1);
+                        let sideMaxY = Math.max(y + length, frontRoadY2);
+                        if (countX === 0) {
+                            roadClaims.push(turf.polygon([[
+                                [x - blockRoad, sideMinY], [x, sideMinY],
+                                [x, sideMaxY], [x - blockRoad, sideMaxY], [x - blockRoad, sideMinY]
+                            ]]));
+                        }
+                        if (countX === plotsPerColumn - 1) {
+                            roadClaims.push(turf.polygon([[
+                                [x + width, sideMinY], [x + width + blockRoad, sideMinY],
+                                [x + width + blockRoad, sideMaxY], [x + width, sideMaxY], [x + width, sideMinY]
+                            ]]));
+                        }
+                    } else {
+                        let sideMinX = Math.min(x, frontRoadX1);
+                        let sideMaxX = Math.max(x + width, frontRoadX2);
+                        if (countY === 0) {
+                            roadClaims.push(turf.polygon([[
+                                [sideMinX, y - blockRoad], [sideMaxX, y - blockRoad],
+                                [sideMaxX, y], [sideMinX, y], [sideMinX, y - blockRoad]
+                            ]]));
+                        }
+                        if (countY === plotsPerRow - 1) {
+                            roadClaims.push(turf.polygon([[
+                                [sideMinX, y + length], [sideMaxX, y + length],
+                                [sideMaxX, y + length + blockRoad], [sideMinX, y + length + blockRoad], [sideMinX, y + length]
+                            ]]));
+                        }
+                    }
+
+                    let isColliding = false;
+                    if (existingPlots && existingPlots.length > 0) {
+                        const pad = 0.1;
+                        const testPlot = turf.polygon([[
+                            [x + pad, y + pad], [x + width - pad, y + pad],
+                            [x + width - pad, y + length - pad], [x + pad, y + length - pad], [x + pad, y + pad]
+                        ]]);
+
+                        for (let ep of existingPlots) {
+                            if (turf.intersect(testPlot, ep.geometry)) { isColliding = true; break; }
+                            if (ep.roadClaims) {
+                                for (let rc of ep.roadClaims) {
+                                    if (turf.intersect(testPlot, rc)) { isColliding = true; break; }
+                                }
+                            }
+                            if (isColliding) break;
+                        }
+
+                        if (!isColliding) {
+                            for (let rc of roadClaims) {
+                                let rCoords = rc.geometry.coordinates[0];
+                                let rMinX = Math.min(rCoords[0][0], rCoords[2][0]);
+                                let rMaxX = Math.max(rCoords[0][0], rCoords[2][0]);
+                                let rMinY = Math.min(rCoords[0][1], rCoords[2][1]);
+                                let rMaxY = Math.max(rCoords[0][1], rCoords[2][1]);
+
+                                const testRoad = turf.polygon([[
+                                    [rMinX + pad, rMinY + pad], [rMaxX - pad, rMinY + pad],
+                                    [rMaxX - pad, rMaxY - pad], [rMinX + pad, rMaxY - pad], [rMinX + pad, rMinY + pad]
+                                ]]);
+
+                                for (let ep of existingPlots) {
+                                    if (turf.intersect(testRoad, ep.geometry)) { isColliding = true; break; }
+                                }
+                                if (isColliding) break;
+                            }
+                        }
+                    }
+
+                    if (!isColliding) {
+                        const intersection = turf.intersect(plotRect, landPolygon);
+                        if (intersection) {
+                            let intersectCoords = intersection.geometry.coordinates;
+                            if (intersection.geometry.type === "MultiPolygon") intersectCoords = intersectCoords[0][0];
+                            else intersectCoords = intersectCoords[0];
+
+                            const area = getCartesianArea(intersectCoords);
+
+                            if (area >= (width * length) * 0.98) {
+                                let pCentroid = getCentroid(intersectCoords);
+                                let minCorridorWidth = Infinity;
+
+                                for (let a = 0; a < 180; a += 10) {
+                                    let rad = a * Math.PI / 180;
+                                    let dx = Math.cos(rad);
+                                    let dy = Math.sin(rad);
+                                    let minT_pos = Infinity;
+                                    let minT_neg = Infinity;
+
+                                    for (let i = 0; i < landBoundaryCoords.length - 1; i++) {
+                                        let x1 = landBoundaryCoords[i][0], y1 = landBoundaryCoords[i][1];
+                                        let x2 = landBoundaryCoords[i + 1][0], y2 = landBoundaryCoords[i + 1][1];
+                                        let v1x = x2 - x1, v1y = y2 - y1;
+                                        let det = v1x * dy - v1y * dx;
+
+                                        if (Math.abs(det) < 0.0001) continue;
+                                        let u = ((pCentroid[0] - x1) * dy - (pCentroid[1] - y1) * dx) / det;
+                                        let t = ((pCentroid[0] - x1) * v1y - (pCentroid[1] - y1) * v1x) / det;
+
+                                        if (u >= 0 && u <= 1) {
+                                            if (t > 0.001 && t < minT_pos) minT_pos = t;
+                                            if (t < -0.001 && -t < minT_neg) minT_neg = -t;
+                                        }
+                                    }
+                                    let totalW = minT_pos + minT_neg;
+                                    if (totalW < minCorridorWidth) minCorridorWidth = totalW;
+                                }
+
+                                const minSafeWidth = (Math.max(baseMainW, baseMainL) * sensitivity) + mainRoad;
+
+                                if (minCorridorWidth >= minSafeWidth) {
+                                    const roadIntersection = turf.intersect(mainRoadRect, landPolygon);
+                                    let hasRoadAccess = false;
+
+                                    if (roadIntersection) {
+                                        let clearCoords = roadIntersection.geometry.coordinates;
+                                        if (roadIntersection.geometry.type === "MultiPolygon") clearCoords = clearCoords[0][0];
+                                        else clearCoords = clearCoords[0];
+
+                                        const clearArea = getCartesianArea(clearCoords);
+                                        const targetClearArea = (frontRoadX2 - frontRoadX1) * (frontRoadY2 - frontRoadY1);
+
+                                        if (clearArea >= targetClearArea * 0.90) hasRoadAccess = true;
+                                    }
+
+                                    if (hasRoadAccess) {
+                                        generatedPlots.push({ geometry: intersection, area: area, roadClaims: roadClaims });
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    y += length;
+                    countY++;
+                    if (countY >= plotsPerRow) { y += blockRoad; countY = 0; }
+                }
+                x += width;
+                countX++;
+                if (countX >= plotsPerColumn) { x += blockRoad; countX = 0; }
+            }
+            return generatedPlots;
+        }
+
+        function getTransformParams(polygon, canvasW, canvasH, padding) {
+            const leftOffset = getSidebarOffset();
+            const usableW = Math.max(200, canvasW - leftOffset);
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            polygon.forEach(p => {
+                if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0];
+                if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1];
+            });
+            const landW = maxX - minX, landH = maxY - minY;
+            const centerX = minX + (landW / 2), centerY = minY + (landH / 2);
+            const baseScale = Math.min((usableW - padding) / landW, (canvasH - padding) / landH);
+            const scale = baseScale * viewZoom;
+            const screenCenterX = leftOffset + (usableW / 2) + viewPanX;
+            const screenCenterY = (canvasH / 2) + viewPanY;
+            return { centerX, centerY, scale, screenCenterX, screenCenterY };
+        }
+
+        function applyTransform(polygonCoords, params) {
+            return polygonCoords.map(p => [
+                (p[0] - params.centerX) * params.scale + params.screenCenterX,
+                -(p[1] - params.centerY) * params.scale + params.screenCenterY
+            ]);
+        }
+
+        function downloadDXF() {
+            if (!globalGeneratedPlots || globalGeneratedPlots.length === 0) {
+                alert("Siteplan belum di-generate atau tidak ada kavling yang terbentuk.");
+                return;
+            }
+
+            let dxfString = "0\nSECTION\n2\nENTITIES\n";
+
+            if (globalRawPolygon && globalRawPolygon.length > 0) {
+                dxfString += "0\nPOLYLINE\n8\nBATAS_LAHAN\n62\n1\n66\n1\n70\n1\n";
+                for (let i = 0; i < globalRawPolygon.length - 1; i++) {
+                    dxfString += "0\nVERTEX\n8\nBATAS_LAHAN\n10\n" + globalRawPolygon[i][0].toFixed(6) + "\n20\n" + globalRawPolygon[i][1].toFixed(6) + "\n30\n0.0\n";
+                }
+                dxfString += "0\nSEQEND\n8\nBATAS_LAHAN\n";
+            }
+
+            globalGeneratedPlots.forEach(plot => {
+                const coords = plot.coords;
+                let layerName = plot.type === 'alt' ? "KAVLING_ALT" : "KAVLING_UTAMA";
+                let color = plot.type === 'alt' ? "5" : "2";
+
+                dxfString += "0\nPOLYLINE\n8\n" + layerName + "\n62\n" + color + "\n66\n1\n70\n1\n";
+
+                for (let i = 0; i < coords.length - 1; i++) {
+                    let origX = (coords[i][0] / globalScale) + globalMinX;
+                    let origY = (coords[i][1] / globalScale) + globalMinY;
+                    dxfString += "0\nVERTEX\n8\n" + layerName + "\n10\n" + origX.toFixed(6) + "\n20\n" + origY.toFixed(6) + "\n30\n0.0\n";
+                }
+                dxfString += "0\nSEQEND\n8\n" + layerName + "\n";
+            });
+
+            dxfString += "0\nENDSEC\n0\nEOF\n";
+
+            const blob = new Blob([dxfString], { type: 'application/dxf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+
+            a.href = url;
+            a.download = 'siteplan_master_v41.dxf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast("File DXF berhasil didownload!");
+        }
+    </script>
+</body>
+</html>
