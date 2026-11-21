@@ -3,43 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Siteplan Studio Pro v41 — Dynamic Interactive UI</title>
+    <title>Siteplan Studio Pro v41 — Futuristic Spatial Neo-CAD</title>
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dxf-parser@1.1.2/dist/dxf-parser.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Poppins:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-2: #7c3aed;
-            --primary-glow: rgba(79, 70, 229, 0.32);
+            --primary: #6366f1;
+            --primary-2: #8b5cf6;
+            --cyan: #06b6d4;
+            --cyan-bright: #22d3ee;
             --accent: #f59e0b;
-            --accent-glow: rgba(245, 158, 11, 0.32);
             --success: #10b981;
-            --success-glow: rgba(16, 185, 129, 0.32);
+            --danger: #ef4444;
 
-            --bg-canvas: #f8fafc;
-            --grid-dot: rgba(148, 163, 184, 0.35);
-            --glass-bg: rgba(255, 255, 255, 0.76);
-            --glass-card: rgba(255, 255, 255, 0.72);
-            --glass-border: rgba(255, 255, 255, 0.85);
-            --border-subtle: rgba(148, 163, 184, 0.25);
-            --input-bg: rgba(255, 255, 255, 0.9);
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --shadow-soft: 0 12px 36px rgba(15, 23, 42, 0.08);
-        }
-
-        body.dark-mode {
-            --bg-canvas: #0b1120;
-            --grid-dot: rgba(148, 163, 184, 0.16);
-            --glass-bg: rgba(15, 23, 42, 0.78);
-            --glass-card: rgba(30, 41, 59, 0.65);
+            --bg-canvas: #050814;
+            --grid-minor: rgba(56, 189, 248, 0.06);
+            --grid-major: rgba(99, 102, 241, 0.14);
+            --glass-bg: rgba(9, 14, 28, 0.78);
+            --glass-card: rgba(15, 23, 42, 0.62);
             --glass-border: rgba(148, 163, 184, 0.18);
-            --border-subtle: rgba(148, 163, 184, 0.16);
-            --input-bg: rgba(15, 23, 42, 0.85);
+            --border-subtle: rgba(148, 163, 184, 0.14);
+            --input-bg: rgba(7, 11, 24, 0.85);
             --text-main: #f1f5f9;
             --text-muted: #94a3b8;
-            --shadow-soft: 0 14px 40px rgba(0, 0, 0, 0.45);
+            --shadow-soft: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(56, 189, 248, 0.08);
+            --glow-primary: 0 0 24px rgba(99, 102, 241, 0.42);
+            --glow-cyan: 0 0 20px rgba(34, 211, 238, 0.35);
+            --glow-accent: 0 0 22px rgba(245, 158, 11, 0.36);
+            --glow-success: 0 0 22px rgba(16, 185, 129, 0.36);
+        }
+
+        body.light-mode {
+            --bg-canvas: #f1f5f9;
+            --grid-minor: rgba(99, 102, 241, 0.06);
+            --grid-major: rgba(79, 70, 229, 0.13);
+            --glass-bg: rgba(255, 255, 255, 0.82);
+            --glass-card: rgba(255, 255, 255, 0.76);
+            --glass-border: rgba(99, 102, 241, 0.18);
+            --border-subtle: rgba(148, 163, 184, 0.28);
+            --input-bg: rgba(255, 255, 255, 0.96);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --shadow-soft: 0 14px 38px rgba(15, 23, 42, 0.1);
+            --glow-primary: 0 8px 22px rgba(79, 70, 229, 0.28);
+            --glow-cyan: 0 8px 20px rgba(6, 182, 212, 0.22);
+            --glow-accent: 0 8px 22px rgba(245, 158, 11, 0.28);
+            --glow-success: 0 8px 22px rgba(16, 185, 129, 0.28);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -54,38 +64,38 @@
             transition: background-color 0.35s ease, color 0.35s ease;
         }
 
-        /* FULLSCREEN WORKSPACE + AMBIENT ORBS */
+        /* FULLSCREEN SPATIAL WORKSPACE + DUAL BLUEPRINT GRID */
         .workspace {
             position: relative;
             width: 100vw;
             height: 100vh;
             overflow: hidden;
             background-color: var(--bg-canvas);
-            background-image: radial-gradient(var(--grid-dot) 1.2px, transparent 1.2px);
-            background-size: 24px 24px;
+            background-image:
+                linear-gradient(var(--grid-minor) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px),
+                linear-gradient(var(--grid-major) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-major) 1px, transparent 1px);
+            background-size: 24px 24px, 24px 24px, 120px 120px, 120px 120px;
             transition: background-color 0.35s ease;
         }
 
         .ambient-orb {
             position: absolute;
             border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.35;
+            filter: blur(100px);
+            opacity: 0.22;
             pointer-events: none;
             z-index: 0;
-            animation: orbFloat 14s ease-in-out infinite alternate;
+            will-change: transform;
+            transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
         }
-        .orb-1 { width: 420px; height: 420px; background: #6366f1; top: -120px; left: 10%; }
-        .orb-2 { width: 380px; height: 380px; background: #10b981; bottom: -120px; right: 8%; animation-delay: -5s; }
-        .orb-3 { width: 300px; height: 300px; background: #38bdf8; top: 30%; right: 25%; animation-delay: -9s; }
-        body.dark-mode .ambient-orb { opacity: 0.16; }
+        .orb-1 { width: 460px; height: 460px; background: #4f46e5; top: -140px; left: 12%; }
+        .orb-2 { width: 420px; height: 420px; background: #06b6d4; bottom: -140px; right: 8%; }
+        .orb-3 { width: 320px; height: 320px; background: #10b981; top: 34%; right: 24%; }
+        body.light-mode .ambient-orb { opacity: 0.14; }
 
-        @keyframes orbFloat {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(35px, 25px) scale(1.08); }
-        }
-
-        /* FULL-BLEED INTERACTIVE CANVAS */
+        /* INTERACTIVE FULL-BLEED CANVAS */
         #siteplanCanvas {
             position: absolute;
             inset: 0;
@@ -97,71 +107,109 @@
         }
         #siteplanCanvas:active { cursor: grabbing; }
 
-        /* FLOATING GLASS SIDEBAR */
+        /* FLOATING HOLOGRAPHIC SIDEBAR */
         .sidebar-shell {
             position: absolute;
             top: 16px;
             left: 16px;
             bottom: 16px;
-            width: 392px;
+            width: 400px;
+            max-width: calc(100vw - 32px);
             z-index: 30;
             display: flex;
             flex-direction: column;
-            border-radius: 20px;
+            border-radius: 22px;
             background: var(--glass-bg);
-            backdrop-filter: blur(22px);
-            -webkit-backdrop-filter: blur(22px);
+            backdrop-filter: blur(26px);
+            -webkit-backdrop-filter: blur(26px);
             border: 1px solid var(--glass-border);
             box-shadow: var(--shadow-soft);
             transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+            overflow: hidden;
+        }
+        .sidebar-shell::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 20px;
+            right: 20px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan-bright), var(--primary), transparent);
+            opacity: 0.85;
+            pointer-events: none;
         }
         .sidebar-shell.collapsed {
-            transform: translateX(-420px);
-            opacity: 0.2;
+            transform: translateX(-430px);
+            opacity: 0.15;
             pointer-events: none;
         }
 
         .sidebar-scroll {
             flex: 1;
             overflow-y: auto;
-            padding: 18px 18px 24px 18px;
+            padding: 16px 16px 24px 16px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 13px;
         }
         .sidebar-scroll::-webkit-scrollbar { width: 5px; }
         .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
-        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.4); border-radius: 99px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.32); border-radius: 99px; }
 
         /* BRAND HEADER */
         .brand-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 16px 18px 14px 18px;
+            padding: 15px 16px 13px 16px;
             border-bottom: 1px solid var(--border-subtle);
+            background: linear-gradient(180deg, rgba(99, 102, 241, 0.08), transparent);
         }
         .brand-left { display: flex; align-items: center; gap: 11px; }
         .brand-logo {
-            width: 38px;
-            height: 38px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            width: 40px;
+            height: 40px;
+            border-radius: 13px;
+            background: linear-gradient(135deg, #4f46e5, #06b6d4);
             color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 18px;
-            box-shadow: 0 6px 16px var(--primary-glow);
+            box-shadow: var(--glow-primary);
+            position: relative;
         }
         .brand-header h2 {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 16.5px;
-            font-weight: 800;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 17px;
+            font-weight: 700;
             letter-spacing: -0.3px;
             color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        .brand-header p { font-size: 10.5px; color: var(--text-muted); margin-top: 1px; }
+        .pro-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: rgba(34, 211, 238, 0.16);
+            color: var(--cyan-bright);
+            border: 1px solid rgba(34, 211, 238, 0.35);
+        }
+        body.light-mode .pro-badge {
+            background: rgba(79, 70, 229, 0.12);
+            color: var(--primary);
+            border-color: rgba(79, 70, 229, 0.3);
+        }
+        .brand-header p {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
 
         .header-actions { display: flex; align-items: center; gap: 6px; }
         .icon-btn {
@@ -177,30 +225,30 @@
             justify-content: center;
             font-size: 14px;
             transition: all 0.2s ease;
-            padding: 0;
         }
         .icon-btn:hover {
-            border-color: var(--primary);
-            color: var(--primary);
+            border-color: var(--cyan-bright);
+            color: var(--cyan-bright);
             transform: translateY(-1px);
+            box-shadow: var(--glow-cyan);
         }
 
-        /* FLOATING RE-OPEN SIDEBAR BUTTON */
+        /* FLOATING RE-OPEN BUTTON */
         .sidebar-reopen {
             position: absolute;
             top: 20px;
             left: 20px;
             z-index: 25;
-            padding: 10px 14px;
-            border-radius: 12px;
+            padding: 10px 15px;
+            border-radius: 13px;
             background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
             border: 1px solid var(--glass-border);
             box-shadow: var(--shadow-soft);
             color: var(--text-main);
-            font-family: 'Poppins', sans-serif;
-            font-size: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12.5px;
             font-weight: 600;
             cursor: pointer;
             display: flex;
@@ -210,68 +258,74 @@
             transform: translateX(-20px);
             pointer-events: none;
             transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-            width: auto;
         }
         .sidebar-reopen.visible {
             opacity: 1;
             transform: translateX(0);
             pointer-events: all;
         }
-        .sidebar-reopen:hover { border-color: var(--primary); color: var(--primary); }
+        .sidebar-reopen:hover {
+            border-color: var(--cyan-bright);
+            color: var(--cyan-bright);
+        }
 
-        /* CARDS */
+        /* GLASS CARDS */
         .card {
             background: var(--glass-card);
-            border: 1px solid var(--glass-border);
-            border-radius: 15px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
             padding: 14px;
-            transition: border-color 0.2s ease, transform 0.2s ease;
+            transition: border-color 0.25s ease, box-shadow 0.25s ease;
         }
-        .card:hover { border-color: rgba(99, 102, 241, 0.35); }
+        .card:hover {
+            border-color: rgba(34, 211, 238, 0.32);
+        }
 
         .section-title {
-            font-family: 'Montserrat', sans-serif;
+            font-family: 'Space Grotesk', sans-serif;
             font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--primary);
+            letter-spacing: 1px;
+            color: var(--cyan-bright);
             margin-bottom: 11px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        body.dark-mode .section-title { color: #818cf8; }
+        body.light-mode .section-title { color: var(--primary); }
         .section-title::before {
             content: "";
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
+            width: 7px;
+            height: 7px;
+            border-radius: 2px;
+            transform: rotate(45deg);
             background: currentColor;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            box-shadow: 0 0 10px currentColor;
         }
 
         /* DROPZONE */
         .dropzone {
             position: relative;
-            border: 1.5px dashed rgba(99, 102, 241, 0.45);
-            border-radius: 12px;
+            border: 1.5px dashed rgba(34, 211, 238, 0.4);
+            border-radius: 13px;
             padding: 15px 12px;
             text-align: center;
-            background: rgba(99, 102, 241, 0.06);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(6, 182, 212, 0.06));
             cursor: pointer;
             transition: all 0.25s ease;
             margin-bottom: 11px;
         }
         .dropzone:hover, .dropzone.dragover {
-            background: rgba(99, 102, 241, 0.13);
-            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(6, 182, 212, 0.14));
+            border-color: var(--cyan-bright);
+            box-shadow: var(--glow-cyan);
             transform: translateY(-1px);
         }
         .dropzone.loaded {
             border-style: solid;
             border-color: rgba(16, 185, 129, 0.55);
-            background: rgba(16, 185, 129, 0.08);
+            background: rgba(16, 185, 129, 0.09);
         }
         .dropzone input[type="file"] {
             position: absolute;
@@ -284,9 +338,10 @@
         .dropzone-icon { font-size: 20px; display: block; margin-bottom: 4px; }
         .dropzone-text { font-size: 12px; font-weight: 600; color: var(--text-main); }
         .dropzone-sub {
-            font-size: 10.5px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
             color: var(--text-muted);
-            margin-top: 2px;
+            margin-top: 3px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -297,7 +352,7 @@
         .input-group label {
             display: block;
             margin-bottom: 5px;
-            font-size: 11.5px;
+            font-size: 11px;
             font-weight: 500;
             color: var(--text-muted);
         }
@@ -305,82 +360,112 @@
             width: 100%;
             padding: 8.5px 11px;
             font-size: 12.5px;
-            font-family: inherit;
+            font-family: 'JetBrains Mono', monospace;
             color: var(--text-main);
             border: 1px solid var(--border-subtle);
-            border-radius: 9px;
+            border-radius: 10px;
             background: var(--input-bg);
             transition: all 0.2s ease;
             outline: none;
         }
+        .input-group select { font-family: 'Poppins', sans-serif; font-size: 12px; }
         .input-group input:focus, .input-group select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.16);
+            border-color: var(--cyan-bright);
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.16);
         }
 
         .flex-row { display: flex; gap: 8px; align-items: center; }
-        .flex-row span { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+        .flex-row span { font-size: 12px; color: var(--text-muted); font-weight: 700; }
 
-        .checkbox-group {
+        /* NEON TOGGLE SWITCH */
+        .switch-row {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
+            justify-content: space-between;
             gap: 10px;
             padding: 10px 11px;
-            background: rgba(16, 185, 129, 0.09);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 10px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.28);
+            border-radius: 11px;
             margin-bottom: 11px;
         }
-        .checkbox-group input[type="checkbox"] {
-            margin-top: 2px;
-            width: 15px;
-            height: 15px;
-            accent-color: #10b981;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-        .checkbox-group label {
-            margin: 0;
+        .switch-label {
             font-size: 11px;
             font-weight: 500;
-            color: #059669;
+            color: #34d399;
+            line-height: 1.35;
             cursor: pointer;
-            line-height: 1.4;
         }
-        body.dark-mode .checkbox-group label { color: #6ee7b7; }
+        body.light-mode .switch-label { color: #059669; }
+        .neon-switch {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+        .neon-switch input { opacity: 0; width: 0; height: 0; }
+        .neon-slider {
+            position: absolute;
+            inset: 0;
+            border-radius: 99px;
+            background: rgba(148, 163, 184, 0.35);
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .neon-slider::before {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            left: 3px;
+            top: 3px;
+            border-radius: 50%;
+            background: #fff;
+            transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+        .neon-switch input:checked + .neon-slider {
+            background: linear-gradient(135deg, #10b981, #06b6d4);
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+        }
+        .neon-switch input:checked + .neon-slider::before {
+            transform: translateX(18px);
+        }
 
         .alt-box {
             padding: 11px;
             background: rgba(56, 189, 248, 0.08);
-            border: 1px solid rgba(56, 189, 248, 0.3);
-            border-radius: 10px;
+            border: 1px solid rgba(56, 189, 248, 0.28);
+            border-radius: 11px;
             margin-top: 4px;
         }
-        .alt-box label { color: #0284c7; font-weight: 600; }
-        body.dark-mode .alt-box label { color: #7dd3fc; }
+        .alt-box label { color: #38bdf8; font-weight: 600; }
+        body.light-mode .alt-box label { color: #0284c7; }
         .alt-box small { display: block; margin-top: 5px; font-size: 10px; color: var(--text-muted); line-height: 1.35; }
 
         .info-text {
             font-size: 10.5px;
-            color: #10b981;
+            color: #34d399;
             font-weight: 500;
             display: block;
             margin-top: 6px;
             line-height: 1.4;
         }
+        body.light-mode .info-text { color: #059669; }
 
-        /* BUTTONS WITH SHINE EFFECT */
+        /* FUTURISTIC ACTION BUTTONS */
         .action-stack { display: flex; flex-direction: column; gap: 9px; }
         .btn-main {
             position: relative;
             overflow: hidden;
             width: 100%;
             padding: 12.5px 14px;
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 600;
-            font-family: 'Poppins', sans-serif;
-            border: none;
-            border-radius: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: 0.2px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 13px;
             cursor: pointer;
             transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
             display: flex;
@@ -393,36 +478,36 @@
             content: "";
             position: absolute;
             top: 0; left: -120%;
-            width: 60%; height: 100%;
-            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.28), transparent);
+            width: 55%; height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.32), transparent);
             transition: left 0.55s ease;
         }
-        .btn-main:hover::after { left: 140%; }
+        .btn-main:hover::after { left: 145%; }
         .btn-main:hover { transform: translateY(-2px); }
         .btn-main:active { transform: translateY(0); }
-        .btn-main:disabled { opacity: 0.55; cursor: not-allowed; transform: none !important; }
+        .btn-main:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
 
         #btnGenerate {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-            box-shadow: 0 8px 20px var(--primary-glow);
+            background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+            box-shadow: var(--glow-primary);
         }
         #btnOptimize {
             background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
             display: none;
-            box-shadow: 0 8px 20px var(--accent-glow);
+            box-shadow: var(--glow-accent);
         }
         #btnDownload {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             display: none;
-            box-shadow: 0 8px 20px var(--success-glow);
+            box-shadow: var(--glow-success);
         }
 
-        /* STATS & CIRCULAR GAUGE */
+        /* STATS & DUAL-RING NEON GAUGE */
         .stat-box {
             padding: 15px;
             background: var(--glass-card);
-            border: 1px solid var(--glass-border);
-            border-radius: 15px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
             font-size: 11.5px;
             line-height: 1.55;
             color: var(--text-main);
@@ -441,11 +526,12 @@
         }
         .gauge-wrap {
             position: relative;
-            width: 78px;
-            height: 78px;
+            width: 82px;
+            height: 82px;
             flex-shrink: 0;
         }
-        .gauge-wrap svg { width: 78px; height: 78px; transform: rotate(-90deg); }
+        .gauge-wrap svg { width: 82px; height: 82px; transform: rotate(-90deg); }
+        .gauge-outer { fill: none; stroke: rgba(148, 163, 184, 0.16); stroke-width: 2; stroke-dasharray: 4 4; }
         .gauge-track { fill: none; stroke: var(--border-subtle); stroke-width: 7; }
         .gauge-fill {
             fill: none;
@@ -454,6 +540,7 @@
             stroke-dasharray: 201;
             stroke-dashoffset: 201;
             transition: stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+            filter: drop-shadow(0 0 6px currentColor);
         }
         .gauge-center {
             position: absolute;
@@ -465,44 +552,46 @@
             text-align: center;
         }
         .gauge-pct {
-            font-family: 'Montserrat', sans-serif;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 14px;
-            font-weight: 800;
+            font-weight: 700;
             line-height: 1;
         }
         .gauge-sub { font-size: 8.5px; color: var(--text-muted); margin-top: 2px; }
 
         .gauge-info { flex: 1; }
         .gauge-units {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 20px;
-            font-weight: 800;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 21px;
+            font-weight: 700;
             color: var(--text-main);
             line-height: 1.1;
         }
-        .gauge-status {
-            font-size: 11px;
-            font-weight: 600;
-            margin-top: 4px;
-        }
+        .gauge-status { font-size: 11px; font-weight: 600; margin-top: 4px; }
 
         .variant-badge {
             display: inline-block;
             padding: 4px 10px;
             border-radius: 99px;
-            background: rgba(99, 102, 241, 0.14);
-            color: #4f46e5;
-            font-size: 10px;
+            background: rgba(34, 211, 238, 0.14);
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            color: var(--cyan-bright);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9.5px;
             font-weight: 600;
         }
-        body.dark-mode .variant-badge { color: #a5b4fc; }
+        body.light-mode .variant-badge {
+            background: rgba(79, 70, 229, 0.12);
+            border-color: rgba(79, 70, 229, 0.25);
+            color: var(--primary);
+        }
 
         .obligation-box {
             margin-top: 10px;
             padding: 10px 12px;
             background: var(--input-bg);
             border: 1px solid var(--border-subtle);
-            border-radius: 11px;
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -516,7 +605,7 @@
         .obligation-label { font-weight: 500; color: var(--text-main); }
         .obligation-sub { display: block; font-size: 9.5px; color: var(--text-muted); font-weight: 400; }
         .obligation-val {
-            font-family: 'Montserrat', sans-serif;
+            font-family: 'JetBrains Mono', monospace;
             font-weight: 700;
             font-size: 12px;
             text-align: right;
@@ -527,12 +616,12 @@
             padding: 9px 11px;
             background: rgba(245, 158, 11, 0.12);
             border: 1px solid rgba(245, 158, 11, 0.35);
-            border-radius: 9px;
+            border-radius: 10px;
             font-size: 10.5px;
-            color: #b45309;
+            color: #fcd34d;
             line-height: 1.4;
         }
-        body.dark-mode .tip-box { color: #fcd34d; }
+        body.light-mode .tip-box { color: #b45309; }
 
         hr { border: 0; border-top: 1px solid var(--border-subtle); margin: 9px 0; }
 
@@ -545,15 +634,16 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 8px 14px;
+            padding: 9px 15px;
             border-radius: 99px;
             background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
             border: 1px solid var(--glass-border);
             box-shadow: var(--shadow-soft);
-            font-size: 11.5px;
-            font-weight: 500;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
             color: var(--text-main);
             opacity: 0;
             transform: translateY(-12px);
@@ -565,28 +655,52 @@
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #10b981;
-            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25);
+            background: var(--cyan-bright);
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.25);
             animation: pulseDot 2s infinite;
         }
         @keyframes pulseDot {
-            0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.28); }
-            50% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0.05); }
+            0%, 100% { box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.32); }
+            50% { box-shadow: 0 0 0 8px rgba(34, 211, 238, 0.04); }
         }
 
-        /* BOTTOM FLOATING LEGEND */
+        /* TELEMETRY COORDINATE HUD */
+        .telemetry-hud {
+            position: absolute;
+            top: 66px;
+            right: 20px;
+            z-index: 20;
+            padding: 6px 12px;
+            border-radius: 10px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--border-subtle);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10.5px;
+            color: var(--text-muted);
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: all 0.35s ease;
+            pointer-events: none;
+        }
+        .telemetry-hud.visible { opacity: 1; transform: translateY(0); }
+        .telemetry-hud strong { color: var(--cyan-bright); }
+        body.light-mode .telemetry-hud strong { color: var(--primary); }
+
+        /* BOTTOM LEGEND */
         .hud-legend {
             position: absolute;
             bottom: 20px;
-            left: 426px;
+            left: 432px;
             z-index: 20;
             display: flex;
             gap: 14px;
             padding: 9px 15px;
-            border-radius: 13px;
+            border-radius: 14px;
             background: var(--glass-bg);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--glass-border);
             box-shadow: var(--shadow-soft);
             font-size: 11.5px;
@@ -602,19 +716,20 @@
         .legend-item { display: flex; align-items: center; gap: 6px; }
         .legend-dot { width: 11px; height: 11px; border-radius: 3px; }
 
-        /* BOTTOM-RIGHT CANVAS CONTROLS */
+        /* BOTTOM-RIGHT CANVAS DOCK CONTROLS */
         .canvas-controls {
             position: absolute;
             bottom: 20px;
             right: 20px;
             z-index: 20;
             display: flex;
-            gap: 6px;
+            align-items: center;
+            gap: 5px;
             padding: 6px;
-            border-radius: 14px;
+            border-radius: 15px;
             background: var(--glass-bg);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--glass-border);
             box-shadow: var(--shadow-soft);
             opacity: 0;
@@ -627,11 +742,11 @@
             height: 34px;
             min-width: 34px;
             padding: 0 10px;
-            border-radius: 9px;
+            border-radius: 10px;
             border: 1px solid transparent;
             background: transparent;
             color: var(--text-main);
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Space Grotesk', sans-serif;
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
@@ -639,18 +754,48 @@
             align-items: center;
             justify-content: center;
             gap: 5px;
-            transition: all 0.18s ease;
+            transition: all 0.2s ease;
         }
         .ctrl-btn:hover {
-            background: rgba(99, 102, 241, 0.12);
+            background: rgba(34, 211, 238, 0.14);
+            border-color: rgba(34, 211, 238, 0.35);
+            color: var(--cyan-bright);
+        }
+        body.light-mode .ctrl-btn:hover {
+            background: rgba(79, 70, 229, 0.12);
+            border-color: rgba(79, 70, 229, 0.3);
             color: var(--primary);
+        }
+        .ctrl-btn.active {
+            background: rgba(34, 211, 238, 0.18);
+            border-color: rgba(34, 211, 238, 0.45);
+            color: var(--cyan-bright);
+        }
+        body.light-mode .ctrl-btn.active {
+            background: rgba(79, 70, 229, 0.14);
+            border-color: rgba(79, 70, 229, 0.38);
+            color: var(--primary);
+        }
+        .ctrl-divider {
+            width: 1px;
+            height: 20px;
+            background: var(--border-subtle);
+            margin: 0 2px;
+        }
+        .zoom-readout {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            min-width: 44px;
+            text-align: center;
         }
 
         /* EMPTY STATE */
         .empty-state {
             position: absolute;
             top: 50%;
-            left: calc(50% + 190px);
+            left: calc(50% + 195px);
             transform: translate(-50%, -50%);
             text-align: center;
             pointer-events: none;
@@ -660,131 +805,168 @@
         .empty-state.shifted { left: 50%; }
         .empty-state.hidden { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
         .empty-icon {
-            width: 72px;
-            height: 72px;
+            width: 78px;
+            height: 78px;
             margin: 0 auto 16px;
-            border-radius: 22px;
-            background: linear-gradient(135deg, rgba(79, 70, 229, 0.16), rgba(16, 185, 129, 0.16));
-            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(6, 182, 212, 0.18));
+            border: 1px solid rgba(34, 211, 238, 0.35);
+            box-shadow: var(--glow-cyan);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 30px;
+            font-size: 32px;
             animation: floatSlow 3.4s ease-in-out infinite;
         }
         @keyframes floatSlow {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
+            50% { transform: translateY(-9px); }
         }
         .empty-state h3 {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 17px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
             font-weight: 700;
             color: var(--text-main);
         }
-        .empty-state p { font-size: 12.5px; color: var(--text-muted); margin-top: 5px; }
+        .empty-state p { font-size: 12.5px; color: var(--text-muted); margin-top: 6px; }
 
         /* HOVER INSPECTOR TOOLTIP */
         .plot-tooltip {
             position: absolute;
             z-index: 35;
-            padding: 7px 11px;
-            border-radius: 9px;
-            background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(8px);
-            color: #fff;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: rgba(5, 8, 20, 0.92);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(34, 211, 238, 0.45);
+            color: #f8fafc;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 11px;
             font-weight: 500;
             pointer-events: none;
             opacity: 0;
-            transform: translate(-50%, -125%);
+            transform: translate(-50%, -128%);
             transition: opacity 0.15s ease;
             white-space: nowrap;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.22);
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
         }
         .plot-tooltip.visible { opacity: 1; }
 
-        /* SCANNING OVERLAY */
+        /* GYRO-SCANNER OVERLAY + LIVE PROGRESS */
         .scan-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(15, 23, 42, 0.18);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
+            background: rgba(5, 8, 20, 0.36);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 14px;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.25s ease;
             z-index: 25;
-            padding-left: 380px;
+            padding-left: 390px;
         }
         .scan-overlay.shifted { padding-left: 0; }
         .scan-overlay.active { opacity: 1; pointer-events: all; }
         .scan-card {
-            padding: 22px 28px;
-            border-radius: 18px;
+            min-width: 290px;
+            padding: 24px 30px;
+            border-radius: 20px;
             background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--shadow-soft);
+            border: 1px solid rgba(34, 211, 238, 0.35);
+            box-shadow: var(--shadow-soft), var(--glow-cyan);
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
+            gap: 13px;
         }
-        .radar-ring {
-            width: 52px;
-            height: 52px;
+        .gyro-ring {
+            width: 58px;
+            height: 58px;
             border-radius: 50%;
-            border: 3px solid rgba(99, 102, 241, 0.2);
-            border-top-color: var(--primary);
-            animation: spin 0.8s linear infinite;
+            border: 3px solid rgba(34, 211, 238, 0.16);
+            border-top-color: var(--cyan-bright);
+            animation: spin 0.85s linear infinite;
             position: relative;
         }
-        .radar-ring::after {
+        .gyro-ring::before {
             content: "";
             position: absolute;
             inset: 7px;
             border-radius: 50%;
-            border: 3px solid rgba(16, 185, 129, 0.2);
+            border: 3px solid rgba(99, 102, 241, 0.18);
+            border-right-color: var(--primary);
+            animation: spinRev 1.15s linear infinite;
+        }
+        .gyro-ring::after {
+            content: "";
+            position: absolute;
+            inset: 15px;
+            border-radius: 50%;
+            border: 2.5px solid rgba(16, 185, 129, 0.2);
             border-bottom-color: var(--success);
-            animation: spinRev 1.1s linear infinite;
+            animation: spin 0.7s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes spinRev { to { transform: rotate(-360deg); } }
         .scan-text {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 13px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13.5px;
             font-weight: 700;
             color: var(--text-main);
+            text-align: center;
+        }
+        .scan-sub {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10.5px;
+            color: var(--cyan-bright);
+            min-height: 15px;
+        }
+        .scan-progress-wrap {
+            width: 100%;
+            height: 6px;
+            border-radius: 99px;
+            background: rgba(148, 163, 184, 0.18);
+            overflow: hidden;
+            display: none;
+        }
+        .scan-progress-wrap.visible { display: block; }
+        .scan-progress-bar {
+            height: 100%;
+            width: 0%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, #4f46e5, #22d3ee, #10b981);
+            transition: width 0.15s ease;
         }
 
         /* FLOATING TOAST */
         .toast {
             position: absolute;
-            top: 70px;
+            top: 108px;
             right: 20px;
             padding: 11px 16px;
-            border-radius: 12px;
-            background: rgba(15, 23, 42, 0.92);
-            backdrop-filter: blur(10px);
+            border-radius: 13px;
+            background: rgba(9, 14, 28, 0.94);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(34, 211, 238, 0.35);
             color: #ffffff;
             font-size: 12px;
             font-weight: 500;
             display: flex;
             align-items: center;
             gap: 9px;
-            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.22);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.38);
             opacity: 0;
             transform: translateY(-12px) scale(0.96);
             transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
             pointer-events: none;
-            z-index: 40;
+            z-index: 45;
         }
         .toast.show { opacity: 1; transform: translateY(0) scale(1); }
+        .toast.error { border-color: rgba(239, 68, 68, 0.6); }
         .toast-dot {
             width: 8px;
             height: 8px;
@@ -792,14 +974,25 @@
             background: #10b981;
             box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25);
         }
+        .toast.error .toast-dot {
+            background: #ef4444;
+            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.25);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar-shell { width: calc(100vw - 24px); left: 12px; top: 12px; bottom: 12px; }
+            .hud-legend { display: none; }
+            .empty-state { left: 50%; }
+            .scan-overlay { padding-left: 0; }
+        }
     </style>
 </head>
 <body>
 
     <div class="workspace" id="workspace">
-        <div class="ambient-orb orb-1"></div>
-        <div class="ambient-orb orb-2"></div>
-        <div class="ambient-orb orb-3"></div>
+        <div class="ambient-orb orb-1" id="orb1"></div>
+        <div class="ambient-orb orb-2" id="orb2"></div>
+        <div class="ambient-orb orb-3" id="orb3"></div>
 
         <!-- FULLSCREEN INTERACTIVE CANVAS -->
         <canvas id="siteplanCanvas"></canvas>
@@ -807,18 +1000,18 @@
         <!-- RE-OPEN SIDEBAR BUTTON -->
         <button class="sidebar-reopen" id="btnReopenSidebar">☰ Buka Panel Kontrol</button>
 
-        <!-- FLOATING GLASS SIDEBAR -->
+        <!-- FLOATING HOLOGRAPHIC SIDEBAR -->
         <aside class="sidebar-shell" id="sidebarShell">
             <div class="brand-header">
                 <div class="brand-left">
                     <div class="brand-logo">❖</div>
                     <div>
-                        <h2>Siteplan Studio</h2>
-                        <p>Interactive Yield Engine v41</p>
+                        <h2>Siteplan Studio <span class="pro-badge">v41 NEO</span></h2>
+                        <p>Hybrid Yield + Road Plan Engine</p>
                     </div>
                 </div>
                 <div class="header-actions">
-                    <button class="icon-btn" id="btnTheme" title="Ganti Tema Light / Dark CAD">🌙</button>
+                    <button class="icon-btn" id="btnTheme" title="Ganti Tema Dark Neo-CAD / Light CAD">☀️</button>
                     <button class="icon-btn" id="btnCollapse" title="Sembunyikan Panel">❮</button>
                 </div>
             </div>
@@ -854,16 +1047,19 @@
                     </div>
                     <div class="input-group">
                         <label>Lebar Jalan Lingkungan (m):</label>
-                        <input type="number" id="roadWidth" class="param-input" value="6">
+                        <input type="number" id="roadWidth" class="param-input" value="6" min="3" step="0.5">
                     </div>
 
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="perimeterSetback" class="param-input" checked>
-                        <label for="perimeterSetback">Kunci Akses Keliling Batas Lahan (Minimal sesuai lebar jalan agar akses antar kluster tidak tertutup)</label>
+                    <div class="switch-row">
+                        <label class="switch-label" for="perimeterSetback">Kunci Akses Keliling Batas Lahan (Minimal sesuai lebar jalan agar akses antar kluster tidak tertutup)</label>
+                        <label class="neon-switch">
+                            <input type="checkbox" id="perimeterSetback" class="param-input" checked>
+                            <span class="neon-slider"></span>
+                        </label>
                     </div>
 
                     <div class="input-group">
-                        <label style="color: #ef4444;">Sensitivitas Bottleneck (Area Sempit):</label>
+                        <label style="color: #f87171;">Sensitivitas Bottleneck (Area Sempit):</label>
                         <select id="bottleneckSensitivity" class="param-input">
                             <option value="1.5">Rendah (Lebih padat kavling)</option>
                             <option value="2.0">Sedang (Standar)</option>
@@ -894,24 +1090,24 @@
 
                 <!-- 3. BLOK -->
                 <div class="card">
-                    <div class="section-title">3. Fasum & Blok</div>
+                    <div class="section-title">3. Fasum &amp; Blok</div>
                     <div class="input-group">
                         <label>Maksimal Kavling per Blok (Deret):</label>
-                        <input type="number" id="maxPerBlock" class="param-input" value="20">
-                        <span class="info-text">🛡️ Corridor Armor • RTH 5% & Makam 2% (hitungan otomatis).</span>
+                        <input type="number" id="maxPerBlock" class="param-input" value="20" min="2">
+                        <span class="info-text">🛡️ Corridor Armor • RTH 5% &amp; Makam 2% • Rencana Jalan ROW + As Jalan.</span>
                     </div>
                 </div>
 
                 <!-- AKSI -->
                 <div class="action-stack">
                     <button class="btn-main" id="btnGenerate">✦ Generate Siteplan</button>
-                    <button class="btn-main" id="btnOptimize">↻ Perbarui Siteplan (Target 60%)</button>
+                    <button class="btn-main" id="btnOptimize">⚡ Optimasi Efisiensi Maksimal (2-Stage)</button>
                     <button class="btn-main" id="btnDownload">↓ Download DXF (AutoCAD)</button>
                 </div>
 
                 <!-- STATISTIK -->
                 <div class="stat-box" id="stats">
-                    <em>Upload file .DXF lalu tekan Generate untuk melihat kalkulasi ruang, RTH 5%, dan lahan makam 2%.</em>
+                    <em>Upload file .DXF lalu tekan Generate untuk melihat kalkulasi ruang, garis rencana jalan, RTH 5%, dan lahan makam 2%.</em>
                 </div>
             </div>
         </aside>
@@ -919,48 +1115,61 @@
         <!-- TOP FLOATING HUD -->
         <div class="top-hud" id="topHud">
             <span class="hud-live-dot"></span>
-            <span id="hudFileInfo">Siap</span>
+            <span id="hudFileInfo">READY // SPATIAL ENGINE</span>
+        </div>
+
+        <!-- TELEMETRY COORDINATE HUD -->
+        <div class="telemetry-hud" id="telemetryHud">
+            X: <strong id="telX">0.0</strong>m &nbsp;|&nbsp; Y: <strong id="telY">0.0</strong>m
         </div>
 
         <!-- EMPTY STATE -->
         <div class="empty-state" id="emptyState">
-            <div class="empty-icon">🗺️</div>
-            <h3>Workspace Siteplan Siap</h3>
-            <p>Seret file .DXF batas lahan ke panel kiri • Bisa Zoom, Pan & Hover Inspect</p>
+            <div class="empty-icon">🛰️</div>
+            <h3>Workspace Spatial Neo-CAD Siap</h3>
+            <p>Seret file .DXF batas lahan ke panel kiri • Smooth Zoom, Pan, LiDAR Scan &amp; Garis Rencana Jalan</p>
         </div>
 
         <!-- BOTTOM LEGEND -->
         <div class="hud-legend" id="hudLegend">
             <div class="legend-item">
-                <span class="legend-dot" style="background:#fef08a; border:1px solid #ca8a04;"></span>
+                <span class="legend-dot" style="background:rgba(250,204,21,0.9); border:1px solid #facc15; box-shadow:0 0 8px rgba(250,204,21,0.45);"></span>
                 <span>Kavling Utama</span>
             </div>
             <div class="legend-item">
-                <span class="legend-dot" style="background:#bae6fd; border:1px solid #0284c7;"></span>
+                <span class="legend-dot" style="background:rgba(56,189,248,0.9); border:1px solid #38bdf8; box-shadow:0 0 8px rgba(56,189,248,0.45);"></span>
                 <span>Kavling Alt</span>
             </div>
             <div class="legend-item">
-                <span class="legend-dot" style="background:rgba(148,163,184,0.2); border:1px solid #94a3b8;"></span>
-                <span>Jalan & PSU</span>
+                <span class="legend-dot" style="background:rgba(148,163,184,0.28); border:1.5px solid #22d3ee;"></span>
+                <span id="legendRoadLabel">Rencana Jalan (6m)</span>
             </div>
         </div>
 
-        <!-- BOTTOM-RIGHT CANVAS CONTROLS -->
+        <!-- BOTTOM-RIGHT CANVAS DOCK CONTROLS -->
         <div class="canvas-controls" id="canvasControls">
-            <button class="ctrl-btn" id="btnZoomIn" title="Zoom In">＋</button>
+            <button class="ctrl-btn active" id="btnToggleRoads" title="Tampilkan / Sembunyikan Garis Rencana Jalan">🛣️ Jalan</button>
+            <span class="ctrl-divider"></span>
             <button class="ctrl-btn" id="btnZoomOut" title="Zoom Out">－</button>
+            <span class="zoom-readout" id="zoomReadout">100%</span>
+            <button class="ctrl-btn" id="btnZoomIn" title="Zoom In">＋</button>
+            <span class="ctrl-divider"></span>
             <button class="ctrl-btn" id="btnFitView" title="Fit ke Layar">⊡ Fit</button>
-            <button class="ctrl-btn" id="btnReplayAnim" title="Putar Ulang Animasi">▶ Replay</button>
+            <button class="ctrl-btn" id="btnReplayAnim" title="Putar Ulang Animasi LiDAR">▶ Replay</button>
         </div>
 
         <!-- HOVER INSPECTOR TOOLTIP -->
         <div class="plot-tooltip" id="plotTooltip"></div>
 
-        <!-- SCANNING OVERLAY -->
+        <!-- GYRO-SCANNER OVERLAY -->
         <div class="scan-overlay" id="scanOverlay">
             <div class="scan-card">
-                <div class="radar-ring"></div>
+                <div class="gyro-ring"></div>
                 <div class="scan-text" id="scanText">Mengkalkulasi Siteplan...</div>
+                <div class="scan-sub" id="scanSub"></div>
+                <div class="scan-progress-wrap" id="scanProgressWrap">
+                    <div class="scan-progress-bar" id="scanProgressBar"></div>
+                </div>
             </div>
         </div>
 
@@ -981,60 +1190,137 @@
         const dropzone = document.getElementById('dropzone');
         const scanOverlay = document.getElementById('scanOverlay');
         const scanText = document.getElementById('scanText');
+        const scanSub = document.getElementById('scanSub');
+        const scanProgressWrap = document.getElementById('scanProgressWrap');
+        const scanProgressBar = document.getElementById('scanProgressBar');
         const emptyState = document.getElementById('emptyState');
         const hudLegend = document.getElementById('hudLegend');
         const canvasControls = document.getElementById('canvasControls');
         const topHud = document.getElementById('topHud');
         const hudFileInfo = document.getElementById('hudFileInfo');
+        const telemetryHud = document.getElementById('telemetryHud');
+        const telX = document.getElementById('telX');
+        const telY = document.getElementById('telY');
+        const zoomReadout = document.getElementById('zoomReadout');
         const plotTooltip = document.getElementById('plotTooltip');
         const toast = document.getElementById('toast');
         const toastMsg = document.getElementById('toastMsg');
 
+        const orb1 = document.getElementById('orb1');
+        const orb2 = document.getElementById('orb2');
+        const orb3 = document.getElementById('orb3');
+
         let globalRawPolygon = null;
         let globalGeneratedPlots = [];
+        let globalGeneratedRoads = { polygons: [], centerlines: [], roadWidth: 6 };
         let globalMinX = 0, globalMinY = 0, globalScale = 1;
 
         let cachedVariants = [];
         let currentVariantIndex = -1;
         let isCalculating = false;
+        let showRoadPlan = true;
 
         let currentAnimFrame = null;
+        let cameraAnimFrame = null;
         let toastTimer = null;
         let lastRenderSnapshot = null;
 
-        // Interactive Camera State (Pan & Zoom)
-        let viewZoom = 1;
-        let viewPanX = 0;
-        let viewPanY = 0;
+        // Smooth Interpolated Camera State
+        let viewZoom = 1, targetZoom = 1;
+        let viewPanX = 0, targetPanX = 0;
+        let viewPanY = 0, targetPanY = 0;
         let isDragging = false;
         let dragStartX = 0, dragStartY = 0;
         let hoveredPlotIndex = -1;
-        let isDarkMode = false;
+        let isLightMode = false;
         let isSidebarCollapsed = false;
 
-        function showToast(message) {
+        // Subtle Parallax for Ambient Orbs
+        window.addEventListener('mousemove', (e) => {
+            const nx = (e.clientX / window.innerWidth) - 0.5;
+            const ny = (e.clientY / window.innerHeight) - 0.5;
+            orb1.style.transform = `translate(${nx * 28}px, ${ny * 24}px)`;
+            orb2.style.transform = `translate(${-nx * 32}px, ${-ny * 26}px)`;
+            orb3.style.transform = `translate(${nx * 18}px, ${-ny * 20}px)`;
+        });
+
+        function showToast(message, type = "success") {
             toastMsg.innerText = message;
+            toast.classList.toggle('error', type === 'error');
             toast.classList.add('show');
             if (toastTimer) clearTimeout(toastTimer);
-            toastTimer = setTimeout(() => toast.classList.remove('show'), 3400);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 3600);
         }
 
-        function setScanning(active, text = "Mengkalkulasi Siteplan...") {
+        function setScanning(active, text = "Mengkalkulasi Siteplan...", subText = "", progress = null) {
             scanText.innerText = text;
+            scanSub.innerText = subText;
+            if (progress !== null && active) {
+                scanProgressWrap.classList.add('visible');
+                scanProgressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
+            } else {
+                scanProgressWrap.classList.remove('visible');
+                scanProgressBar.style.width = '0%';
+            }
             if (active) scanOverlay.classList.add('active');
             else scanOverlay.classList.remove('active');
         }
 
         function getSidebarOffset() {
-            return isSidebarCollapsed ? 0 : 408;
+            if (window.innerWidth <= 768) return 0;
+            return isSidebarCollapsed ? 0 : 416;
         }
 
-        function resetView(redraw = true) {
-            viewZoom = 1;
-            viewPanX = 0;
-            viewPanY = 0;
-            if (redraw && lastRenderSnapshot) {
-                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+        function updateZoomLabels() {
+            zoomReadout.innerText = `${Math.round(viewZoom * 100)}%`;
+        }
+
+        function startSmoothCameraLoop() {
+            if (cameraAnimFrame) return;
+            function tick() {
+                const dz = targetZoom - viewZoom;
+                const dx = targetPanX - viewPanX;
+                const dy = targetPanY - viewPanY;
+
+                if (Math.abs(dz) < 0.002 && Math.abs(dx) < 0.3 && Math.abs(dy) < 0.3) {
+                    viewZoom = targetZoom;
+                    viewPanX = targetPanX;
+                    viewPanY = targetPanY;
+                    updateZoomLabels();
+                    if (lastRenderSnapshot && !currentAnimFrame) {
+                        drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots, lastRenderSnapshot.roadNetwork);
+                    }
+                    cameraAnimFrame = null;
+                    return;
+                }
+
+                viewZoom += dz * 0.18;
+                viewPanX += dx * 0.2;
+                viewPanY += dy * 0.2;
+                updateZoomLabels();
+
+                if (lastRenderSnapshot && !currentAnimFrame) {
+                    drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots, lastRenderSnapshot.roadNetwork);
+                }
+                cameraAnimFrame = requestAnimationFrame(tick);
+            }
+            cameraAnimFrame = requestAnimationFrame(tick);
+        }
+
+        function resetView(redraw = true, smooth = true) {
+            targetZoom = 1;
+            targetPanX = 0;
+            targetPanY = 0;
+            if (!smooth) {
+                viewZoom = 1;
+                viewPanX = 0;
+                viewPanY = 0;
+                updateZoomLabels();
+                if (redraw && lastRenderSnapshot) {
+                    drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots, lastRenderSnapshot.roadNetwork);
+                }
+            } else if (redraw) {
+                startSmoothCameraLoop();
             }
         }
 
@@ -1049,19 +1335,19 @@
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
             if (lastRenderSnapshot && !currentAnimFrame) {
-                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots, lastRenderSnapshot.roadNetwork);
             }
         }
         window.addEventListener('load', resizeCanvasToFit);
         window.addEventListener('resize', resizeCanvasToFit);
 
-        // Theme Toggle
+        // Theme Toggle (Dark Neo-CAD <-> Crisp Light CAD)
         btnTheme.addEventListener('click', () => {
-            isDarkMode = !isDarkMode;
-            document.body.classList.toggle('dark-mode', isDarkMode);
-            btnTheme.innerText = isDarkMode ? '☀️' : '🌙';
+            isLightMode = !isLightMode;
+            document.body.classList.toggle('light-mode', isLightMode);
+            btnTheme.innerText = isLightMode ? '🌙' : '☀️';
             if (lastRenderSnapshot && !currentAnimFrame) {
-                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots, lastRenderSnapshot.roadNetwork);
             }
         });
 
@@ -1074,20 +1360,19 @@
             emptyState.classList.toggle('shifted', collapse);
             scanOverlay.classList.toggle('shifted', collapse);
             if (lastRenderSnapshot && !currentAnimFrame) {
-                setTimeout(() => drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots), 180);
+                setTimeout(() => drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots, lastRenderSnapshot.roadNetwork), 220);
             }
         }
         btnCollapse.addEventListener('click', () => toggleSidebar(true));
         btnReopenSidebar.addEventListener('click', () => toggleSidebar(false));
 
-        // Canvas Zoom, Pan & Hover Inspector
+        // Canvas Smooth Zoom, Pan, Telemetry & Hover Inspector
         canvas.addEventListener('wheel', (e) => {
             if (!lastRenderSnapshot || currentAnimFrame) return;
             e.preventDefault();
-            const zoomFactor = e.deltaY < 0 ? 1.12 : 0.89;
-            const newZoom = Math.min(6, Math.max(0.5, viewZoom * zoomFactor));
-            viewZoom = newZoom;
-            drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+            const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
+            targetZoom = Math.min(7, Math.max(0.45, targetZoom * zoomFactor));
+            startSmoothCameraLoop();
         }, { passive: false });
 
         canvas.addEventListener('mousedown', (e) => {
@@ -1102,18 +1387,27 @@
         canvas.addEventListener('mousemove', (e) => {
             if (!lastRenderSnapshot || currentAnimFrame) return;
 
+            const params = getTransformParams(lastRenderSnapshot.normalizedCoords, window.innerWidth, window.innerHeight, 100);
+            const mx = e.clientX, my = e.clientY;
+
+            // Real-time Telemetry Coordinate Readout
+            const worldX = ((mx - params.screenCenterX) / params.scale) + params.centerX;
+            const worldY = (-(my - params.screenCenterY) / params.scale) + params.centerY;
+            telX.innerText = worldX.toFixed(1);
+            telY.innerText = worldY.toFixed(1);
+
             if (isDragging) {
-                viewPanX = e.clientX - dragStartX;
-                viewPanY = e.clientY - dragStartY;
+                targetPanX = e.clientX - dragStartX;
+                targetPanY = e.clientY - dragStartY;
+                viewPanX = targetPanX;
+                viewPanY = targetPanY;
                 plotTooltip.classList.remove('visible');
-                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots, lastRenderSnapshot.roadNetwork);
                 return;
             }
 
             // Hover hit-test kavling
             if (lastRenderSnapshot.finalPlots.length === 0) return;
-            const params = getTransformParams(lastRenderSnapshot.normalizedCoords, window.innerWidth, window.innerHeight, 90);
-            const mx = e.clientX, my = e.clientY;
             let foundIdx = -1;
 
             for (let i = 0; i < lastRenderSnapshot.finalPlots.length; i++) {
@@ -1126,13 +1420,13 @@
 
             if (foundIdx !== hoveredPlotIndex) {
                 hoveredPlotIndex = foundIdx;
-                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots, lastRenderSnapshot.roadNetwork);
             }
 
             if (foundIdx !== -1) {
                 const plot = lastRenderSnapshot.finalPlots[foundIdx];
-                const label = plot.type === 'alt' ? 'Kavling Alternatif' : 'Kavling Utama';
-                plotTooltip.innerHTML = `<strong>${label} #${foundIdx + 1}</strong> • ${plot.area.toFixed(1)} m²`;
+                const label = plot.type === 'alt' ? 'KAVLING ALT' : 'KAVLING UTAMA';
+                plotTooltip.innerHTML = `<strong style="color:${plot.type === 'alt' ? '#38bdf8' : '#facc15'}">${label} #${foundIdx + 1}</strong> • ${plot.area.toFixed(1)} m²`;
                 plotTooltip.style.left = mx + 'px';
                 plotTooltip.style.top = my + 'px';
                 plotTooltip.classList.add('visible');
@@ -1146,7 +1440,7 @@
             hoveredPlotIndex = -1;
             plotTooltip.classList.remove('visible');
             if (lastRenderSnapshot && !currentAnimFrame) {
-                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots, lastRenderSnapshot.roadNetwork);
             }
         });
 
@@ -1161,22 +1455,29 @@
             return inside;
         }
 
-        // Canvas Control Buttons
+        // Canvas Dock Control Buttons
         document.getElementById('btnZoomIn').addEventListener('click', () => {
             if (!lastRenderSnapshot) return;
-            viewZoom = Math.min(6, viewZoom * 1.2);
-            drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+            targetZoom = Math.min(7, targetZoom * 1.25);
+            startSmoothCameraLoop();
         });
         document.getElementById('btnZoomOut').addEventListener('click', () => {
             if (!lastRenderSnapshot) return;
-            viewZoom = Math.max(0.5, viewZoom / 1.2);
-            drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+            targetZoom = Math.max(0.45, targetZoom / 1.25);
+            startSmoothCameraLoop();
         });
-        document.getElementById('btnFitView').addEventListener('click', () => resetView(true));
+        document.getElementById('btnFitView').addEventListener('click', () => resetView(true, true));
+        document.getElementById('btnToggleRoads').addEventListener('click', () => {
+            showRoadPlan = !showRoadPlan;
+            document.getElementById('btnToggleRoads').classList.toggle('active', showRoadPlan);
+            if (lastRenderSnapshot && !currentAnimFrame) {
+                drawStaticSnapshot(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots, lastRenderSnapshot.roadNetwork);
+            }
+        });
         document.getElementById('btnReplayAnim').addEventListener('click', () => {
             if (!lastRenderSnapshot || lastRenderSnapshot.finalPlots.length === 0) return;
-            resetView(false);
-            animateCanvasReveal(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots);
+            resetView(false, false);
+            animateCanvasReveal(lastRenderSnapshot.normalizedCoords, lastRenderSnapshot.finalPlots, lastRenderSnapshot.roadNetwork);
         });
 
         // Drag & drop visual feedback
@@ -1191,7 +1492,7 @@
             el.addEventListener('change', () => {
                 cachedVariants = [];
                 currentVariantIndex = -1;
-                document.getElementById('btnOptimize').innerText = "↻ Perbarui Siteplan (Target 60%)";
+                document.getElementById('btnOptimize').innerText = "⚡ Optimasi Efisiensi Maksimal (2-Stage)";
             });
         });
 
@@ -1208,7 +1509,7 @@
                         cachedVariants = [];
                         currentVariantIndex = -1;
                         hoveredPlotIndex = -1;
-                        resetView(false);
+                        resetView(false, false);
 
                         const testScale = parseFloat(document.getElementById('dxfScale').value);
                         const testArea = getCartesianArea(globalRawPolygon) * (testScale * testScale);
@@ -1224,17 +1525,18 @@
                         const normalized = preparePolygon(globalRawPolygon);
                         emptyState.classList.add('hidden');
                         topHud.classList.add('visible');
+                        telemetryHud.classList.add('visible');
                         canvasControls.classList.add('visible');
-                        hudFileInfo.innerText = `${file.name} • ${testArea.toLocaleString('id-ID', {maximumFractionDigits: 0})} m²`;
+                        hudFileInfo.innerText = `${file.name} // ${testArea.toLocaleString('id-ID', {maximumFractionDigits: 0})} m²`;
 
-                        lastRenderSnapshot = { normalizedCoords: normalized, finalPlots: [] };
+                        lastRenderSnapshot = { normalizedCoords: normalized, finalPlots: [], roadNetwork: null };
                         animateBoundaryPreview(normalized);
                         showToast(`Lahan dimuat (${testArea.toLocaleString('id-ID', {maximumFractionDigits: 0})} m²)`);
                     } else {
-                        alert("Tidak ditemukan garis Polyline batas lahan tertutup.");
+                        showToast("Tidak ditemukan garis Polyline batas lahan tertutup.", "error");
                     }
                 } catch (err) {
-                    alert("Gagal membaca DXF: " + err.message);
+                    showToast("Gagal membaca DXF: " + err.message, "error");
                 }
             };
             reader.readAsText(file);
@@ -1370,6 +1672,10 @@
             });
         }
 
+        function bboxesOverlap(a, b) {
+            return !(a[2] <= b[0] || a[0] >= b[2] || a[3] <= b[1] || a[1] >= b[3]);
+        }
+
         function getCurrentConfig() {
             const plotWidth2Input = document.getElementById('plotWidth2').value;
             const plotLength2Input = document.getElementById('plotLength2').value;
@@ -1380,10 +1686,10 @@
 
             return {
                 gridMode: document.getElementById('gridMode').value,
-                roadWidth: parseFloat(document.getElementById('roadWidth').value),
+                roadWidth: parseFloat(document.getElementById('roadWidth').value) || 6,
                 usePerimeterSetback: document.getElementById('perimeterSetback').checked,
-                plotWidth: parseFloat(document.getElementById('plotWidth').value),
-                plotLength: parseFloat(document.getElementById('plotLength').value),
+                plotWidth: parseFloat(document.getElementById('plotWidth').value) || 6,
+                plotLength: parseFloat(document.getElementById('plotLength').value) || 10,
                 plotWidth2,
                 plotLength2,
                 useAltPlot,
@@ -1395,7 +1701,7 @@
 
         function computeSiteplanLayout(normalizedCoords, totalLandArea, centroid, config, variant) {
             const { gridMode, roadWidth, usePerimeterSetback, plotWidth, plotLength, plotWidth2, plotLength2, useAltPlot, maxBlockInput, sensitivity, altSensitivity } = config;
-            const { angle, offsetX, offsetY, swapPrimary, label } = variant;
+            const { angle, offsetX, offsetY, swapPrimary, label, deepInfill = false } = variant;
 
             let rotatedCoords = rotateCoords(normalizedCoords, centroid[0], centroid[1], -angle);
             if (rotatedCoords[0][0] !== rotatedCoords[rotatedCoords.length - 1][0] || rotatedCoords[0][1] !== rotatedCoords[rotatedCoords.length - 1][1]) {
@@ -1419,6 +1725,16 @@
                 p2 = filterOrphans(p2, Math.max(plotWidth, plotLength), Math.max(plotWidth, plotLength), rotatedPlots);
                 p2.forEach(p => p.type = 'main');
                 rotatedPlots = rotatedPlots.concat(p2);
+
+                // Pocket Infill Pass: isi celah kantong tersisa dengan fase bergeser tanpa menabrak jalan/kavling
+                if (deepInfill) {
+                    const infillShiftX = offsetX + firstW * 0.5;
+                    const infillShiftY = offsetY + (firstL + roadWidth) * 0.5;
+                    let pInfill = subdivideBlock(rotatedLand, rotatedCoords, secondW, secondL, roadWidth, rotatedPlots, maxBlockInput, plotWidth, plotLength, sensitivity, usePerimeterSetback, infillShiftX, infillShiftY);
+                    pInfill = filterOrphans(pInfill, Math.max(plotWidth, plotLength), Math.max(plotWidth, plotLength), rotatedPlots);
+                    pInfill.forEach(p => p.type = 'main');
+                    rotatedPlots = rotatedPlots.concat(pInfill);
+                }
             }
 
             if (useAltPlot) {
@@ -1447,6 +1763,18 @@
                 return { coords: backRotated, area: plot.area, type: plot.type };
             });
 
+            // Simpan data mentah jalan lingkungan untuk di-merge secara lazy hanya saat dirender
+            const rawRoadClaims = [];
+            const rawCenterlines = [];
+            rotatedPlots.forEach(plot => {
+                if (plot.roadClaims) {
+                    for (let rc of plot.roadClaims) rawRoadClaims.push(rc);
+                }
+                if (plot.centerlineSegments) {
+                    for (let seg of plot.centerlineSegments) rawCenterlines.push(seg);
+                }
+            });
+
             let totalSaleableArea = 0, countMain = 0, countAlt = 0;
             finalPlots.forEach(plot => {
                 totalSaleableArea += plot.area;
@@ -1462,12 +1790,183 @@
                 countMain,
                 countAlt,
                 saleablePercentage: (totalSaleableArea / totalLandArea) * 100,
-                label
+                label,
+                variant,
+                rawRoadData: {
+                    angle,
+                    centroid,
+                    rotatedCoords,
+                    rotatedLand,
+                    roadWidth,
+                    claims: rawRoadClaims,
+                    centerlines: rawCenterlines
+                },
+                roadNetwork: null
             };
         }
 
         // ==============================================================
-        // ENGINE ANIMASI 3-TAHAP (BOUNDARY TRACE + LASER SWEEP + SPRING)
+        // ENGINE PEMBENTUK GARIS RENCANA JALAN LINGKUNGAN (ROW + AS JALAN)
+        // ==============================================================
+        function mergePolygonsFast(polys) {
+            if (!polys || polys.length === 0) return null;
+            let current = polys.slice();
+            while (current.length > 1) {
+                const next = [];
+                for (let i = 0; i < current.length; i += 2) {
+                    if (i + 1 < current.length) {
+                        try {
+                            const merged = turf.union(current[i], current[i + 1]);
+                            if (merged) next.push(merged);
+                            else { next.push(current[i]); next.push(current[i + 1]); }
+                        } catch (e) {
+                            next.push(current[i]);
+                        }
+                    } else {
+                        next.push(current[i]);
+                    }
+                }
+                if (next.length === current.length) break;
+                current = next;
+            }
+            return current[0] || null;
+        }
+
+        function clipSegmentToPolygon(p1, p2, polyCoords) {
+            const dx = p2[0] - p1[0];
+            const dy = p2[1] - p1[1];
+            const ts = [0, 1];
+
+            for (let i = 0; i < polyCoords.length - 1; i++) {
+                const x3 = polyCoords[i][0], y3 = polyCoords[i][1];
+                const x4 = polyCoords[i + 1][0], y4 = polyCoords[i + 1][1];
+                const ex = x4 - x3, ey = y4 - y3;
+                const denom = dx * ey - dy * ex;
+                if (Math.abs(denom) < 1e-9) continue;
+
+                const t = ((x3 - p1[0]) * ey - (y3 - p1[1]) * ex) / denom;
+                const u = ((x3 - p1[0]) * dy - (y3 - p1[1]) * dx) / denom;
+                if (t > 1e-5 && t < 1 - 1e-5 && u >= -1e-5 && u <= 1 + 1e-5) {
+                    ts.push(t);
+                }
+            }
+
+            ts.sort((a, b) => a - b);
+            const clipped = [];
+            for (let i = 0; i < ts.length - 1; i++) {
+                const t0 = ts[i], t1 = ts[i + 1];
+                if (t1 - t0 < 1e-4) continue;
+                const tm = (t0 + t1) * 0.5;
+                const mx = p1[0] + dx * tm;
+                const my = p1[1] + dy * tm;
+                if (isPointInPolygon(mx, my, polyCoords)) {
+                    clipped.push([
+                        [p1[0] + dx * t0, p1[1] + dy * t0],
+                        [p1[0] + dx * t1, p1[1] + dy * t1]
+                    ]);
+                }
+            }
+            return clipped;
+        }
+
+        function mergeCollinearSegments(segments) {
+            const horiz = new Map();
+            const vert = new Map();
+            const eps = 0.08;
+
+            segments.forEach(([a, b]) => {
+                if (Math.abs(a[1] - b[1]) < 0.05) {
+                    const yKey = Math.round(a[1] * 20) / 20;
+                    if (!horiz.has(yKey)) horiz.set(yKey, []);
+                    horiz.get(yKey).push([Math.min(a[0], b[0]), Math.max(a[0], b[0])]);
+                } else if (Math.abs(a[0] - b[0]) < 0.05) {
+                    const xKey = Math.round(a[0] * 20) / 20;
+                    if (!vert.has(xKey)) vert.set(xKey, []);
+                    vert.get(xKey).push([Math.min(a[1], b[1]), Math.max(a[1], b[1])]);
+                }
+            });
+
+            const merged = [];
+
+            horiz.forEach((intervals, yVal) => {
+                intervals.sort((a, b) => a[0] - b[0]);
+                let cur = intervals[0];
+                for (let i = 1; i < intervals.length; i++) {
+                    if (intervals[i][0] <= cur[1] + eps) {
+                        cur[1] = Math.max(cur[1], intervals[i][1]);
+                    } else {
+                        merged.push([[cur[0], yVal], [cur[1], yVal]]);
+                        cur = intervals[i];
+                    }
+                }
+                merged.push([[cur[0], yVal], [cur[1], yVal]]);
+            });
+
+            vert.forEach((intervals, xVal) => {
+                intervals.sort((a, b) => a[0] - b[0]);
+                let cur = intervals[0];
+                for (let i = 1; i < intervals.length; i++) {
+                    if (intervals[i][0] <= cur[1] + eps) {
+                        cur[1] = Math.max(cur[1], intervals[i][1]);
+                    } else {
+                        merged.push([[xVal, cur[0]], [xVal, cur[1]]]);
+                        cur = intervals[i];
+                    }
+                }
+                merged.push([[xVal, cur[0]], [xVal, cur[1]]]);
+            });
+
+            return merged;
+        }
+
+        function ensureRoadGeometry(result) {
+            if (result.roadNetwork) return result.roadNetwork;
+            const raw = result.rawRoadData;
+            if (!raw || raw.claims.length === 0) {
+                result.roadNetwork = { polygons: [], centerlines: [], roadWidth: raw ? raw.roadWidth : 6 };
+                return result.roadNetwork;
+            }
+
+            const { angle, centroid, rotatedCoords, rotatedLand, roadWidth, claims, centerlines } = raw;
+            const polygons = [];
+
+            // 1. Gabungkan seluruh area klaim jalan (ROW) lalu potong mengikuti batas lahan
+            let mergedRoad = mergePolygonsFast(claims);
+            if (mergedRoad) {
+                try {
+                    const clippedRoad = turf.intersect(mergedRoad, rotatedLand);
+                    if (clippedRoad) mergedRoad = clippedRoad;
+                } catch (e) {}
+
+                const geom = mergedRoad.geometry ? mergedRoad.geometry : mergedRoad;
+                const polyList = geom.type === 'MultiPolygon' ? geom.coordinates : [geom.coordinates];
+                polyList.forEach(polyRings => {
+                    const worldRings = polyRings.map(ring => rotateCoords(ring, centroid[0], centroid[1], angle));
+                    polygons.push(worldRings);
+                });
+            }
+
+            // 2. Gabungkan garis As Jalan (centerline) yang segaris lalu potong ke batas lahan
+            const mergedLines = mergeCollinearSegments(centerlines);
+            const worldCenterlines = [];
+            mergedLines.forEach(([p1, p2]) => {
+                const clippedSegs = clipSegmentToPolygon(p1, p2, rotatedCoords);
+                clippedSegs.forEach(([c1, c2]) => {
+                    const rot = rotateCoords([c1, c2], centroid[0], centroid[1], angle);
+                    worldCenterlines.push(rot);
+                });
+            });
+
+            result.roadNetwork = {
+                polygons,
+                centerlines: worldCenterlines,
+                roadWidth
+            };
+            return result.roadNetwork;
+        }
+
+        // ==============================================================
+        // ENGINE RENDER & ANIMASI FUTURISTIK (PLASMA TRACE + LIDAR + SPARKS)
         // ==============================================================
         function easeOutBack(x) {
             const c1 = 1.70158;
@@ -1476,29 +1975,41 @@
         }
 
         function getThemeColors() {
-            if (isDarkMode) {
+            if (!isLightMode) {
                 return {
-                    landFill: 'rgba(30, 41, 59, 0.72)',
-                    landStroke: '#64748b',
-                    mainFill: 'rgba(250, 204, 21, 0.85)',
-                    mainStroke: '#eab308',
-                    altFill: 'rgba(56, 189, 248, 0.85)',
-                    altStroke: '#0ea5e9',
-                    hoverStroke: '#ffffff'
+                    landFill: 'rgba(15, 23, 42, 0.72)',
+                    landStroke: 'rgba(56, 189, 248, 0.55)',
+                    landGlow: 'rgba(34, 211, 238, 0.28)',
+                    roadFill: 'rgba(51, 65, 85, 0.56)',
+                    roadCurb: 'rgba(34, 211, 238, 0.52)',
+                    roadCenter: 'rgba(226, 232, 240, 0.55)',
+                    mainFill: 'rgba(250, 204, 21, 0.84)',
+                    mainStroke: '#fde047',
+                    altFill: 'rgba(56, 189, 248, 0.84)',
+                    altStroke: '#7dd3fc',
+                    hoverStroke: '#ffffff',
+                    laserPrimary: '#22d3ee',
+                    laserSecondary: '#818cf8'
                 };
             }
             return {
-                landFill: 'rgba(255, 255, 255, 0.88)',
-                landStroke: '#94a3b8',
+                landFill: 'rgba(255, 255, 255, 0.9)',
+                landStroke: '#6366f1',
+                landGlow: 'rgba(99, 102, 241, 0.22)',
+                roadFill: 'rgba(148, 163, 184, 0.26)',
+                roadCurb: 'rgba(71, 85, 105, 0.78)',
+                roadCenter: 'rgba(79, 70, 229, 0.58)',
                 mainFill: '#fef08a',
                 mainStroke: '#ca8a04',
                 altFill: '#bae6fd',
                 altStroke: '#0284c7',
-                hoverStroke: '#4f46e5'
+                hoverStroke: '#4f46e5',
+                laserPrimary: '#4f46e5',
+                laserSecondary: '#06b6d4'
             };
         }
 
-        function drawPolygonScaled(pixelCoords, fillColor, strokeColor, scale, alpha, lineWidth = 1, glow = false) {
+        function drawPolygonScaled(pixelCoords, fillColor, strokeColor, scale, alpha, lineWidth = 1, glowColor = null) {
             if (scale <= 0.01 || alpha <= 0.01) return;
             let cx = 0, cy = 0;
             const n = pixelCoords.length - 1;
@@ -1507,9 +2018,9 @@
 
             ctx.save();
             ctx.globalAlpha = Math.min(1, alpha);
-            if (glow) {
-                ctx.shadowColor = isDarkMode ? 'rgba(129, 140, 248, 0.75)' : 'rgba(79, 70, 229, 0.45)';
-                ctx.shadowBlur = 12;
+            if (glowColor) {
+                ctx.shadowColor = glowColor;
+                ctx.shadowBlur = 14;
             }
             ctx.beginPath();
             for (let i = 0; i < pixelCoords.length; i++) {
@@ -1528,7 +2039,64 @@
             ctx.restore();
         }
 
-        // Menggambar batas lahan secara bertahap seperti pena AutoCAD
+        function drawBoundaryVertices(pts, alpha, colors) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            for (let i = 0; i < pts.length - 1; i++) {
+                ctx.beginPath();
+                ctx.arc(pts[i][0], pts[i][1], 2.6, 0, Math.PI * 2);
+                ctx.fillStyle = colors.laserPrimary;
+                ctx.shadowColor = colors.laserPrimary;
+                ctx.shadowBlur = 8;
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        function drawRoadNetwork(roadNetwork, params, colors, alpha = 1) {
+            if (!showRoadPlan || !roadNetwork || alpha <= 0.01) return;
+
+            ctx.save();
+            ctx.globalAlpha = Math.min(1, alpha);
+
+            // 1. Permukaan jalan + garis tepi jalan lingkungan (ROW sesuai inputan)
+            if (roadNetwork.polygons && roadNetwork.polygons.length > 0) {
+                roadNetwork.polygons.forEach(polyRings => {
+                    ctx.beginPath();
+                    polyRings.forEach(ring => {
+                        const pts = applyTransform(ring, params);
+                        for (let i = 0; i < pts.length; i++) {
+                            if (i === 0) ctx.moveTo(pts[i][0], pts[i][1]);
+                            else ctx.lineTo(pts[i][0], pts[i][1]);
+                        }
+                        ctx.closePath();
+                    });
+                    ctx.fillStyle = colors.roadFill;
+                    ctx.fill('evenodd');
+                    ctx.strokeStyle = colors.roadCurb;
+                    ctx.lineWidth = 1.25;
+                    ctx.stroke();
+                });
+            }
+
+            // 2. Garis As Jalan (Centerline putus-putus)
+            if (roadNetwork.centerlines && roadNetwork.centerlines.length > 0) {
+                ctx.beginPath();
+                ctx.setLineDash([6, 5]);
+                ctx.strokeStyle = colors.roadCenter;
+                ctx.lineWidth = 1.1;
+                roadNetwork.centerlines.forEach(seg => {
+                    const pts = applyTransform(seg, params);
+                    ctx.moveTo(pts[0][0], pts[0][1]);
+                    ctx.lineTo(pts[1][0], pts[1][1]);
+                });
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            ctx.restore();
+        }
+
         function drawTracedBoundary(pts, progress, colors) {
             let totalLen = 0;
             let segLens = [];
@@ -1539,9 +2107,8 @@
             }
             const targetLen = totalLen * Math.min(1, progress);
 
-            // Isi fill secara halus setelah trace melewati 55%
-            if (progress > 0.55) {
-                const fillAlpha = Math.min(1, (progress - 0.55) / 0.45);
+            if (progress > 0.5) {
+                const fillAlpha = Math.min(1, (progress - 0.5) / 0.5);
                 drawPolygonScaled(pts, colors.landFill, 'transparent', 1, fillAlpha, 0);
             }
 
@@ -1550,6 +2117,7 @@
             ctx.moveTo(pts[0][0], pts[0][1]);
             let acc = 0;
             let tipX = pts[0][0], tipY = pts[0][1];
+            let reachedCount = 1;
 
             for (let i = 0; i < segLens.length; i++) {
                 if (acc + segLens[i] <= targetLen) {
@@ -1557,6 +2125,7 @@
                     acc += segLens[i];
                     tipX = pts[i + 1][0];
                     tipY = pts[i + 1][1];
+                    reachedCount++;
                 } else {
                     const rem = (targetLen - acc) / (segLens[i] || 1);
                     tipX = pts[i][0] + (pts[i + 1][0] - pts[i][0]) * rem;
@@ -1565,17 +2134,26 @@
                     break;
                 }
             }
-            ctx.strokeStyle = progress < 1 ? '#6366f1' : colors.landStroke;
-            ctx.lineWidth = progress < 1 ? 2.2 : 1.4;
+            ctx.strokeStyle = progress < 1 ? colors.laserPrimary : colors.landStroke;
+            ctx.lineWidth = progress < 1 ? 2.4 : 1.6;
+            ctx.shadowColor = colors.laserPrimary;
+            ctx.shadowBlur = progress < 1 ? 14 : 6;
             ctx.stroke();
 
-            // Titik cahaya di ujung pena
+            // Nyalakan vertex yang sudah dilewati sinar plasma
+            for (let i = 0; i < Math.min(reachedCount, pts.length - 1); i++) {
+                ctx.beginPath();
+                ctx.arc(pts[i][0], pts[i][1], 2.6, 0, Math.PI * 2);
+                ctx.fillStyle = colors.laserPrimary;
+                ctx.fill();
+            }
+
             if (progress < 1) {
                 ctx.beginPath();
-                ctx.arc(tipX, tipY, 4.5, 0, Math.PI * 2);
-                ctx.fillStyle = '#6366f1';
-                ctx.shadowColor = '#6366f1';
-                ctx.shadowBlur = 12;
+                ctx.arc(tipX, tipY, 5.2, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = colors.laserPrimary;
+                ctx.shadowBlur = 18;
                 ctx.fill();
             }
             ctx.restore();
@@ -1584,11 +2162,11 @@
         function animateBoundaryPreview(normalizedCoords) {
             if (currentAnimFrame) cancelAnimationFrame(currentAnimFrame);
             const w = window.innerWidth, h = window.innerHeight;
-            const params = getTransformParams(normalizedCoords, w, h, 90);
+            const params = getTransformParams(normalizedCoords, w, h, 100);
             const pts = applyTransform(normalizedCoords, params);
             const colors = getThemeColors();
             const start = performance.now();
-            const dur = 520;
+            const dur = 580;
 
             function step(now) {
                 const t = Math.min(1, (now - start) / dur);
@@ -1598,40 +2176,43 @@
                 if (t < 1) currentAnimFrame = requestAnimationFrame(step);
                 else {
                     currentAnimFrame = null;
-                    drawStaticSnapshot(normalizedCoords, []);
+                    drawStaticSnapshot(normalizedCoords, [], null);
                 }
             }
             currentAnimFrame = requestAnimationFrame(step);
         }
 
-        function drawStaticSnapshot(normalizedCoords, finalPlots) {
+        function drawStaticSnapshot(normalizedCoords, finalPlots, roadNetwork = null) {
             const w = window.innerWidth;
             const h = window.innerHeight;
-            const params = getTransformParams(normalizedCoords, w, h, 90);
+            const params = getTransformParams(normalizedCoords, w, h, 100);
             const colors = getThemeColors();
             ctx.clearRect(0, 0, w, h);
 
-            drawPolygonScaled(applyTransform(normalizedCoords, params), colors.landFill, colors.landStroke, 1, 1, 1.4);
+            const landPts = applyTransform(normalizedCoords, params);
+            drawPolygonScaled(landPts, colors.landFill, colors.landStroke, 1, 1, 1.6, colors.landGlow);
+            drawRoadNetwork(roadNetwork, params, colors, 1);
+            drawBoundaryVertices(landPts, 0.75, colors);
 
             finalPlots.forEach((plot, idx) => {
                 const canvasPlot = applyTransform(plot.coords, params);
                 const isHovered = idx === hoveredPlotIndex;
                 const fill = plot.type === 'alt' ? colors.altFill : colors.mainFill;
                 const stroke = isHovered ? colors.hoverStroke : (plot.type === 'alt' ? colors.altStroke : colors.mainStroke);
-                drawPolygonScaled(canvasPlot, fill, stroke, isHovered ? 1.07 : 1, 1, isHovered ? 2.2 : 1, isHovered);
+                const glow = isHovered ? (plot.type === 'alt' ? '#38bdf8' : '#facc15') : null;
+                drawPolygonScaled(canvasPlot, fill, stroke, isHovered ? 1.09 : 1, 1, isHovered ? 2.4 : 1, glow);
             });
         }
 
-        function animateCanvasReveal(normalizedCoords, finalPlots) {
+        function animateCanvasReveal(normalizedCoords, finalPlots, roadNetwork = null) {
             if (currentAnimFrame) cancelAnimationFrame(currentAnimFrame);
 
             const w = window.innerWidth;
             const h = window.innerHeight;
-            const params = getTransformParams(normalizedCoords, w, h, 90);
+            const params = getTransformParams(normalizedCoords, w, h, 100);
             const canvasLand = applyTransform(normalizedCoords, params);
             const colors = getThemeColors();
 
-            // Hitung rentang diagonal untuk sapuan laser
             let minDiag = Infinity, maxDiag = -Infinity;
             canvasLand.forEach(p => {
                 const d = p[0] + p[1];
@@ -1643,26 +2224,33 @@
                 const pts = applyTransform(plot.coords, params);
                 const c = getCentroid(pts);
                 const diagNorm = (c[0] + c[1] - minDiag) / Math.max(1, maxDiag - minDiag);
-                return { pts, type: plot.type, diagNorm };
+                return { pts, cx: c[0], cy: c[1], type: plot.type, diagNorm, sparked: false };
             });
 
+            const sparks = [];
             const traceDur = 360;
-            const sweepStart = 220;
-            const sweepDur = 760;
-            const itemPopDur = 260;
-            const totalDur = sweepStart + sweepDur + itemPopDur + 60;
+            const sweepStart = 210;
+            const sweepDur = 780;
+            const itemPopDur = 280;
+            const totalDur = sweepStart + sweepDur + itemPopDur + 120;
             const startTime = performance.now();
 
             function step(now) {
                 const elapsed = now - startTime;
                 ctx.clearRect(0, 0, w, h);
 
-                // Stage 1: Boundary Trace
+                // Stage 1: Plasma Boundary Trace
                 const traceT = Math.min(1, elapsed / traceDur);
                 const traceEased = 1 - Math.pow(1 - traceT, 3);
                 drawTracedBoundary(canvasLand, traceEased, colors);
 
-                // Stage 2: Laser Sweep + Kavling Spring Pop-In
+                // Stage 1.5: Fade-in garis rencana jalan lingkungan saat sapuan LiDAR berjalan
+                if (roadNetwork && elapsed >= sweepStart) {
+                    const roadAlpha = Math.min(1, (elapsed - sweepStart) / (sweepDur * 0.75));
+                    drawRoadNetwork(roadNetwork, params, colors, roadAlpha);
+                }
+
+                // Stage 2: Holographic LiDAR Sweep + Spring Pop-In + Spark Burst
                 if (elapsed >= sweepStart) {
                     const sweepT = Math.min(1, (elapsed - sweepStart) / sweepDur);
                     const sweepPos = minDiag + (maxDiag - minDiag) * sweepT;
@@ -1673,25 +2261,39 @@
                         const localT = (elapsed - itemStart) / itemPopDur;
                         if (localT <= 0) continue;
 
+                        if (!item.sparked && sparks.length < 90) {
+                            item.sparked = true;
+                            for (let s = 0; s < 2; s++) {
+                                const ang = Math.random() * Math.PI * 2;
+                                const spd = 0.6 + Math.random() * 1.4;
+                                sparks.push({
+                                    x: item.cx, y: item.cy,
+                                    vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
+                                    life: 1,
+                                    color: item.type === 'alt' ? '#38bdf8' : '#facc15'
+                                });
+                            }
+                        }
+
                         const clamped = Math.min(1, localT);
                         const scale = clamped < 1 ? easeOutBack(clamped) : 1;
-                        const flashGlow = clamped < 0.65;
+                        const flashGlow = clamped < 0.6 ? colors.laserPrimary : null;
                         const fill = item.type === 'alt' ? colors.altFill : colors.mainFill;
                         const stroke = item.type === 'alt' ? colors.altStroke : colors.mainStroke;
                         drawPolygonScaled(item.pts, fill, stroke, scale, clamped, 1, flashGlow);
                     }
 
-                    // Garis laser diagonal lembut selama sapuan aktif
+                    // Garis LiDAR diagonal dengan trailing glow
                     if (sweepT < 1) {
                         ctx.save();
                         const grad = ctx.createLinearGradient(0, 0, w, h);
-                        grad.addColorStop(0, 'rgba(99, 102, 241, 0.0)');
-                        grad.addColorStop(0.5, 'rgba(99, 102, 241, 0.55)');
-                        grad.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+                        grad.addColorStop(0, 'rgba(34, 211, 238, 0.0)');
+                        grad.addColorStop(0.5, colors.laserPrimary);
+                        grad.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
                         ctx.strokeStyle = grad;
-                        ctx.lineWidth = 3;
-                        ctx.shadowColor = '#6366f1';
-                        ctx.shadowBlur = 16;
+                        ctx.lineWidth = 3.2;
+                        ctx.shadowColor = colors.laserPrimary;
+                        ctx.shadowBlur = 20;
                         ctx.beginPath();
                         ctx.moveTo(sweepPos, 0);
                         ctx.lineTo(0, sweepPos);
@@ -1700,11 +2302,29 @@
                     }
                 }
 
+                // Render & update micro-sparks
+                for (let i = sparks.length - 1; i >= 0; i--) {
+                    const sp = sparks[i];
+                    sp.x += sp.vx;
+                    sp.y += sp.vy;
+                    sp.life -= 0.045;
+                    if (sp.life <= 0) { sparks.splice(i, 1); continue; }
+                    ctx.save();
+                    ctx.globalAlpha = sp.life;
+                    ctx.fillStyle = sp.color;
+                    ctx.shadowColor = sp.color;
+                    ctx.shadowBlur = 8;
+                    ctx.beginPath();
+                    ctx.arc(sp.x, sp.y, 1.8, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+
                 if (elapsed < totalDur) {
                     currentAnimFrame = requestAnimationFrame(step);
                 } else {
                     currentAnimFrame = null;
-                    drawStaticSnapshot(normalizedCoords, finalPlots);
+                    drawStaticSnapshot(normalizedCoords, finalPlots, roadNetwork);
                 }
             }
 
@@ -1728,22 +2348,28 @@
         }
 
         function renderSiteplanResult(result, normalizedCoords, totalLandArea, config, optionInfoText = "") {
+            const roadNetwork = ensureRoadGeometry(result);
             globalGeneratedPlots = result.finalPlots;
-            lastRenderSnapshot = { normalizedCoords, finalPlots: result.finalPlots };
+            globalGeneratedRoads = roadNetwork;
+            lastRenderSnapshot = { normalizedCoords, finalPlots: result.finalPlots, roadNetwork };
             hoveredPlotIndex = -1;
-            resetView(false);
+            resetView(false, false);
+
+            const legendRoadEl = document.getElementById('legendRoadLabel');
+            if (legendRoadEl) legendRoadEl.innerText = `Rencana Jalan (${config.roadWidth}m)`;
 
             emptyState.classList.add('hidden');
             hudLegend.classList.add('visible');
             canvasControls.classList.add('visible');
             topHud.classList.add('visible');
+            telemetryHud.classList.add('visible');
 
-            animateCanvasReveal(normalizedCoords, result.finalPlots);
+            animateCanvasReveal(normalizedCoords, result.finalPlots, roadNetwork);
 
             const pct = result.saleablePercentage;
             const targetPct = 60;
             const gaugeRatio = Math.min(1, pct / targetPct);
-            const circumference = 201; // 2 * PI * 32
+            const circumference = 201;
             const dashOffset = circumference * (1 - gaugeRatio);
             const barColor = pct >= targetPct ? '#10b981' : (pct >= 50 ? '#f59e0b' : '#ef4444');
             const targetStatus = pct >= targetPct ? '✓ Target 60% Tercapai!' : `Kurang ${(targetPct - pct).toFixed(1)}% dari 60%`;
@@ -1757,7 +2383,7 @@
                 if (!config.useAltPlot) tips.push("isi <b>Kavling Alternatif</b>");
                 if (config.sensitivity > 1.5) tips.push("turunkan <b>Sensitivitas Bottleneck</b>");
                 if (tips.length > 0) {
-                    tipHtml = `<div class="tip-box">💡 <strong>Tips menuju 60%:</strong> Coba ${tips.join(", atau ")}, lalu klik Perbarui Siteplan.</div>`;
+                    tipHtml = `<div class="tip-box">💡 <strong>Tips menuju 60%:</strong> Coba ${tips.join(", atau ")}, lalu klik Optimasi Efisiensi.</div>`;
                 }
             }
 
@@ -1770,9 +2396,10 @@
                 ${optionInfoText ? `<div class="variant-badge">${optionInfoText}</div>` : ''}
                 <div class="gauge-header">
                     <div class="gauge-wrap">
-                        <svg viewBox="0 0 78 78">
-                            <circle class="gauge-track" cx="39" cy="39" r="32"></circle>
-                            <circle class="gauge-fill" id="gaugeFill" cx="39" cy="39" r="32" style="stroke:${barColor};"></circle>
+                        <svg viewBox="0 0 82 82">
+                            <circle class="gauge-outer" cx="41" cy="41" r="38"></circle>
+                            <circle class="gauge-track" cx="41" cy="41" r="32"></circle>
+                            <circle class="gauge-fill" id="gaugeFill" cx="41" cy="41" r="32" style="stroke:${barColor}; color:${barColor};"></circle>
                         </svg>
                         <div class="gauge-center">
                             <span class="gauge-pct" id="kpiPct" style="color:${barColor};">0%</span>
@@ -1789,7 +2416,7 @@
                 </div>
 
                 <strong>Total Luas Lahan:</strong> ${totalLandArea.toLocaleString('id-ID', {maximumFractionDigits: 2})} m²<br>
-                <strong>Sisa Jalan & PSU Lainnya:</strong> ${remainingRoadPsu.toLocaleString('id-ID', {maximumFractionDigits: 2})} m²
+                <strong>Sisa Jalan &amp; PSU Lainnya:</strong> ${remainingRoadPsu.toLocaleString('id-ID', {maximumFractionDigits: 2})} m²
 
                 <div class="obligation-box">
                     <div class="obligation-row">
@@ -1805,13 +2432,13 @@
                             🪦 Lahan Makam (2%)
                             <span class="obligation-sub">Wajib disediakan di luar lahan</span>
                         </span>
-                        <span class="obligation-val" style="color:#8b5cf6;">${result.requiredMakamArea.toLocaleString('id-ID', {maximumFractionDigits: 2})} m²</span>
+                        <span class="obligation-val" style="color:#a78bfa;">${result.requiredMakamArea.toLocaleString('id-ID', {maximumFractionDigits: 2})} m²</span>
                     </div>
                 </div>
 
                 <hr>
-                <span style="color:#eab308; font-weight: 600;">■ Utama (${config.plotWidth}×${config.plotLength}): ${result.countMain} unit</span><br>
-                ${config.useAltPlot ? `<span style="color:#0ea5e9; font-weight: 600;">■ Alt (${config.plotWidth2}×${config.plotLength2}): ${result.countAlt} unit</span>` : ''}
+                <span style="color:#facc15; font-weight: 600;">■ Utama (${config.plotWidth}×${config.plotLength}): ${result.countMain} unit</span><br>
+                ${config.useAltPlot ? `<span style="color:#38bdf8; font-weight: 600;">■ Alt (${config.plotWidth2}×${config.plotLength2}): ${result.countAlt} unit</span>` : ''}
                 ${tipHtml}
             `;
 
@@ -1825,13 +2452,13 @@
             document.getElementById('btnOptimize').style.display = 'flex';
             document.getElementById('btnDownload').style.display = 'flex';
 
-            hudFileInfo.innerText = `${result.countMain + result.countAlt} Unit • ${pct.toFixed(1)}% Efektif • RTH 5% & Makam 2%`;
+            hudFileInfo.innerText = `${result.countMain + result.countAlt} UNIT // ${pct.toFixed(1)}% EFEKTIF // ROW ${config.roadWidth}m`;
             showToast(`Selesai! ${result.countMain + result.countAlt} unit terbentuk (${pct.toFixed(1)}% efektif)`);
         }
 
         function generateStandardSiteplan() {
             if (!globalRawPolygon) {
-                alert("Silakan upload file DXF batas lahan terlebih dahulu.");
+                showToast("Silakan upload file DXF batas lahan terlebih dahulu.", "error");
                 return;
             }
             if (isCalculating) return;
@@ -1842,7 +2469,7 @@
             const btnOpt = document.getElementById('btnOptimize');
             btnGen.disabled = true;
             btnOpt.disabled = true;
-            setScanning(true, "Menata Kavling & Akses Jalan...");
+            setScanning(true, "Menata Kavling & Rencana Jalan...", "Menghitung orientasi sisi terpanjang");
 
             cachedVariants = [];
             currentVariantIndex = -1;
@@ -1859,22 +2486,26 @@
                     offsetX: 0,
                     offsetY: 0,
                     swapPrimary: false,
+                    deepInfill: true,
                     label: "Standar (Sisi Terpanjang)"
                 });
 
                 setScanning(false);
                 renderSiteplanResult(result, normalizedCoords, totalLandArea, config, "Opsi Standar (Sisi Terpanjang)");
                 btnGen.innerText = "✦ Generate Ulang Standar";
-                btnOpt.innerText = "↻ Perbarui Siteplan (Target 60%)";
+                btnOpt.innerText = "⚡ Optimasi Efisiensi Maksimal (2-Stage)";
                 btnGen.disabled = false;
                 btnOpt.disabled = false;
                 isCalculating = false;
             }, 90);
         }
 
+        // ==============================================================
+        // 2-STAGE HYBRID YIELD OPTIMIZER (COARSE-TO-FINE + PHASE + INFILL)
+        // ==============================================================
         function findNextOptimalSiteplan() {
             if (!globalRawPolygon) {
-                alert("Silakan upload file DXF batas lahan terlebih dahulu.");
+                showToast("Silakan upload file DXF batas lahan terlebih dahulu.", "error");
                 return;
             }
             if (isCalculating) return;
@@ -1885,6 +2516,7 @@
             const totalLandArea = getCartesianArea(normalizedCoords);
             const centroid = getCentroid(normalizedCoords);
 
+            // Jika sudah ada hasil optimasi tersimpan, putar ke opsi terbaik berikutnya
             if (cachedVariants.length > 0) {
                 currentVariantIndex = (currentVariantIndex + 1) % cachedVariants.length;
                 const chosen = cachedVariants[currentVariantIndex];
@@ -1893,32 +2525,26 @@
                     `Opsi #${currentVariantIndex + 1}/${cachedVariants.length} — ${chosen.label}`
                 );
                 const nextNum = ((currentVariantIndex + 1) % cachedVariants.length) + 1;
-                document.getElementById('btnOptimize').innerText = `↻ Perbarui Siteplan (Opsi #${nextNum}/${cachedVariants.length})`;
+                document.getElementById('btnOptimize').innerText = `↻ Lihat Opsi Terbaik #${nextNum}/${cachedVariants.length}`;
                 return;
             }
 
-            const topAngles = getTopEdgeAngles(normalizedCoords, 3);
-            const shiftX = config.plotWidth * 0.5;
-            const shiftY = (config.plotLength + config.roadWidth) * 0.5;
+            // TAHAP 1: Broad Angular Exploration (4 sisi terpanjang + sapuan global per 15°)
+            const topAngles = getTopEdgeAngles(normalizedCoords, 4);
+            const stage1Specs = [];
+            const seenAngles = [];
 
-            const candidateSpecs = [
-                { angle: topAngles[0], offsetX: 0, offsetY: 0, swapPrimary: false, label: "Sisi #1 (Standar)" },
-                { angle: topAngles[0], offsetX: 0, offsetY: 0, swapPrimary: true, label: "Sisi #1 (Putar Blok 90°)" },
-                { angle: topAngles[0], offsetX: shiftX, offsetY: 0, swapPrimary: false, label: "Sisi #1 (Geser Grid X)" },
-                { angle: topAngles[0], offsetX: 0, offsetY: shiftY, swapPrimary: false, label: "Sisi #1 (Geser Grid Y)" },
-                { angle: topAngles[0], offsetX: shiftX, offsetY: shiftY, swapPrimary: true, label: "Sisi #1 (Putar 90° + Geser)" },
-                { angle: topAngles[0] + 45, offsetX: 0, offsetY: 0, swapPrimary: false, label: "Diagonal +45°" },
-                { angle: topAngles[0] - 45, offsetX: 0, offsetY: 0, swapPrimary: false, label: "Diagonal -45°" },
-                { angle: 0, offsetX: 0, offsetY: 0, swapPrimary: false, label: "Grid Tegak Lurus (0°)" }
-            ];
-
-            if (topAngles.length > 1) {
-                candidateSpecs.push({ angle: topAngles[1], offsetX: 0, offsetY: 0, swapPrimary: false, label: "Sisi Terpanjang #2" });
-                candidateSpecs.push({ angle: topAngles[1], offsetX: 0, offsetY: 0, swapPrimary: true, label: "Sisi #2 (Putar 90°)" });
+            function addUniqueAngleSpec(angleDeg, labelPrefix) {
+                const norm = ((angleDeg % 180) + 180) % 180;
+                if (seenAngles.some(a => Math.abs(a - norm) < 4 || Math.abs(Math.abs(a - norm) - 180) < 4)) return;
+                seenAngles.push(norm);
+                stage1Specs.push({ angle: angleDeg, offsetX: 0, offsetY: 0, swapPrimary: false, deepInfill: false, label: `${labelPrefix} (${norm.toFixed(0)}°)` });
+                stage1Specs.push({ angle: angleDeg, offsetX: 0, offsetY: 0, swapPrimary: true, deepInfill: false, label: `${labelPrefix} Putar 90° (${norm.toFixed(0)}°)` });
             }
-            if (topAngles.length > 2) {
-                candidateSpecs.push({ angle: topAngles[2], offsetX: 0, offsetY: 0, swapPrimary: false, label: "Sisi Terpanjang #3" });
-                candidateSpecs.push({ angle: topAngles[2], offsetX: 0, offsetY: 0, swapPrimary: true, label: "Sisi #3 (Putar 90°)" });
+
+            topAngles.forEach((ang, i) => addUniqueAngleSpec(ang, `Sisi #${i + 1}`));
+            for (let deg = 0; deg < 180; deg += 15) {
+                addUniqueAngleSpec(deg, `Global`);
             }
 
             isCalculating = true;
@@ -1927,51 +2553,147 @@
             btnGen.disabled = true;
             btnOpt.disabled = true;
 
-            let evaluated = [];
+            let stage1Results = [];
+            let stage2Specs = [];
+            let allEvaluated = [];
+            let bestSoFar = 0;
+            let phase = 1;
             let idx = 0;
 
-            function processNextCandidate() {
-                if (idx >= candidateSpecs.length) {
-                    evaluated.sort((a, b) => b.saleablePercentage - a.saleablePercentage);
+            function buildStage2FromTop() {
+                stage1Results.sort((a, b) => b.saleablePercentage - a.saleablePercentage);
+                const topSeeds = stage1Results.slice(0, 3);
+                const cycleX = config.plotWidth * Math.ceil(config.maxBlockInput / 2) + config.roadWidth;
+                const cycleY = (config.plotLength * 2) + config.roadWidth;
 
-                    let unique = [];
-                    evaluated.forEach(item => {
-                        let isDup = unique.some(u =>
-                            Math.abs(u.saleablePercentage - item.saleablePercentage) < 0.05 &&
-                            u.countMain === item.countMain &&
-                            u.countAlt === item.countAlt
-                        );
-                        if (!isDup) unique.push(item);
+                topSeeds.forEach((seed, sIdx) => {
+                    const base = seed.variant;
+                    const rankTag = `Top-${sIdx + 1}`;
+
+                    // Pergeseran fase grid + Pocket Infill
+                    const phaseOffsets = [
+                        { ox: 0, oy: 0, tag: "Infill" },
+                        { ox: config.plotWidth * 0.5, oy: 0, tag: "Geser X ½" },
+                        { ox: 0, oy: cycleY * 0.25, tag: "Fase Y 25%" },
+                        { ox: 0, oy: cycleY * 0.5, tag: "Fase Y 50%" },
+                        { ox: 0, oy: cycleY * 0.75, tag: "Fase Y 75%" },
+                        { ox: cycleX * 0.25, oy: cycleY * 0.5, tag: "Fase Silang" },
+                        { ox: config.plotWidth * 0.5, oy: cycleY * 0.5, tag: "Diagonal Fase" }
+                    ];
+
+                    phaseOffsets.forEach(po => {
+                        stage2Specs.push({
+                            angle: base.angle,
+                            offsetX: po.ox,
+                            offsetY: po.oy,
+                            swapPrimary: base.swapPrimary,
+                            deepInfill: true,
+                            label: `${rankTag} ${po.tag}`
+                        });
                     });
 
-                    cachedVariants = unique.length > 0 ? unique : evaluated;
-                    currentVariantIndex = 0;
+                    // Micro-Angle Tuning (±2.5° dan ±5°)
+                    [-5, -2.5, 2.5, 5].forEach(delta => {
+                        stage2Specs.push({
+                            angle: base.angle + delta,
+                            offsetX: 0,
+                            offsetY: 0,
+                            swapPrimary: base.swapPrimary,
+                            deepInfill: true,
+                            label: `${rankTag} Micro ${delta > 0 ? '+' : ''}${delta}°`
+                        });
+                    });
+                });
+            }
 
-                    setScanning(false);
+            function finishOptimization() {
+                allEvaluated.sort((a, b) => b.saleablePercentage - a.saleablePercentage);
+
+                let unique = [];
+                allEvaluated.forEach(item => {
+                    let isDup = unique.some(u =>
+                        Math.abs(u.saleablePercentage - item.saleablePercentage) < 0.08 &&
+                        u.countMain === item.countMain &&
+                        u.countAlt === item.countAlt
+                    );
+                    if (!isDup) unique.push(item);
+                });
+
+                cachedVariants = (unique.length > 0 ? unique : allEvaluated).slice(0, 12);
+                currentVariantIndex = 0;
+
+                setScanning(false);
+                if (cachedVariants.length > 0) {
                     const best = cachedVariants[0];
                     renderSiteplanResult(
                         best, normalizedCoords, totalLandArea, config,
                         `Opsi Terbaik #1/${cachedVariants.length} — ${best.label}`
                     );
-
                     const nextNum = cachedVariants.length > 1 ? 2 : 1;
-                    btnOpt.innerText = `↻ Perbarui Siteplan (Opsi #${nextNum}/${cachedVariants.length})`;
-                    btnGen.disabled = false;
-                    btnOpt.disabled = false;
-                    isCalculating = false;
-                    return;
+                    btnOpt.innerText = `↻ Lihat Opsi Terbaik #${nextNum}/${cachedVariants.length}`;
+                } else {
+                    showToast("Tidak ditemukan konfigurasi kavling yang memenuhi aturan.", "error");
                 }
 
-                setScanning(true, `Memindai Opsi Efisiensi (${idx + 1}/${candidateSpecs.length})...`);
-                try {
-                    const res = computeSiteplanLayout(normalizedCoords, totalLandArea, centroid, config, candidateSpecs[idx]);
-                    if (res.finalPlots.length > 0) evaluated.push(res);
-                } catch (e) {}
-                idx++;
-                setTimeout(processNextCandidate, 18);
+                btnGen.disabled = false;
+                btnOpt.disabled = false;
+                isCalculating = false;
             }
 
-            processNextCandidate();
+            function stepOptimizer() {
+                if (phase === 1) {
+                    if (idx >= stage1Specs.length) {
+                        buildStage2FromTop();
+                        phase = 2;
+                        idx = 0;
+                        setTimeout(stepOptimizer, 10);
+                        return;
+                    }
+                    const spec = stage1Specs[idx];
+                    const pctDone = (idx / (stage1Specs.length + 33)) * 100;
+                    setScanning(
+                        true,
+                        `Tahap 1/2: Eksplorasi Sudut (${idx + 1}/${stage1Specs.length})`,
+                        `Terbaik sementara: ${bestSoFar.toFixed(1)}% • ${spec.label}`,
+                        pctDone
+                    );
+                    try {
+                        const res = computeSiteplanLayout(normalizedCoords, totalLandArea, centroid, config, spec);
+                        if (res.finalPlots.length > 0) {
+                            stage1Results.push(res);
+                            allEvaluated.push(res);
+                            if (res.saleablePercentage > bestSoFar) bestSoFar = res.saleablePercentage;
+                        }
+                    } catch (e) {}
+                    idx++;
+                    setTimeout(stepOptimizer, 8);
+                } else {
+                    if (idx >= stage2Specs.length) {
+                        finishOptimization();
+                        return;
+                    }
+                    const spec = stage2Specs[idx];
+                    const totalSteps = stage1Specs.length + stage2Specs.length;
+                    const pctDone = ((stage1Specs.length + idx) / totalSteps) * 100;
+                    setScanning(
+                        true,
+                        `Tahap 2/2: Deep Phase & Infill (${idx + 1}/${stage2Specs.length})`,
+                        `Terbaik sementara: ${bestSoFar.toFixed(1)}% • ${spec.label}`,
+                        pctDone
+                    );
+                    try {
+                        const res = computeSiteplanLayout(normalizedCoords, totalLandArea, centroid, config, spec);
+                        if (res.finalPlots.length > 0) {
+                            allEvaluated.push(res);
+                            if (res.saleablePercentage > bestSoFar) bestSoFar = res.saleablePercentage;
+                        }
+                    } catch (e) {}
+                    idx++;
+                    setTimeout(stepOptimizer, 8);
+                }
+            }
+
+            stepOptimizer();
         }
 
         function subdivideBlock(landPolygon, landBoundaryCoords, width, length, mainRoad, existingPlots, maxBlockSize, baseMainW, baseMainL, sensitivity, usePerimeterSetback, offsetX = 0, offsetY = 0) {
@@ -2005,6 +2727,7 @@
                     }
 
                     let roadClaims = [];
+                    let centerlineSegments = [];
                     let frontRoadX1 = x, frontRoadY1 = y, frontRoadX2 = x + width, frontRoadY2 = y + length;
 
                     if (!isRotated) {
@@ -2019,53 +2742,85 @@
                         [frontRoadX1, frontRoadY1], [frontRoadX2, frontRoadY1],
                         [frontRoadX2, frontRoadY2], [frontRoadX1, frontRoadY2], [frontRoadX1, frontRoadY1]
                     ]]);
+                    mainRoadRect._bbox = [Math.min(frontRoadX1, frontRoadX2), Math.min(frontRoadY1, frontRoadY2), Math.max(frontRoadX1, frontRoadX2), Math.max(frontRoadY1, frontRoadY2)];
                     roadClaims.push(mainRoadRect);
 
                     if (!isRotated) {
+                        const yMid = (frontRoadY1 + frontRoadY2) * 0.5;
+                        const cx1 = (countX === 0) ? (x - blockRoad * 0.5) : x;
+                        const cx2 = (countX === plotsPerColumn - 1) ? (x + width + blockRoad * 0.5) : (x + width);
+                        centerlineSegments.push([[cx1, yMid], [cx2, yMid]]);
+
                         let sideMinY = Math.min(y, frontRoadY1);
                         let sideMaxY = Math.max(y + length, frontRoadY2);
+                        const sideCenterY1 = Math.min(y, yMid);
+                        const sideCenterY2 = Math.max(y + length, yMid);
                         if (countX === 0) {
-                            roadClaims.push(turf.polygon([[
+                            const rc = turf.polygon([[
                                 [x - blockRoad, sideMinY], [x, sideMinY],
                                 [x, sideMaxY], [x - blockRoad, sideMaxY], [x - blockRoad, sideMinY]
-                            ]]));
+                            ]]);
+                            rc._bbox = [x - blockRoad, sideMinY, x, sideMaxY];
+                            roadClaims.push(rc);
+                            centerlineSegments.push([[x - blockRoad * 0.5, sideCenterY1], [x - blockRoad * 0.5, sideCenterY2]]);
                         }
                         if (countX === plotsPerColumn - 1) {
-                            roadClaims.push(turf.polygon([[
+                            const rc = turf.polygon([[
                                 [x + width, sideMinY], [x + width + blockRoad, sideMinY],
                                 [x + width + blockRoad, sideMaxY], [x + width, sideMaxY], [x + width, sideMinY]
-                            ]]));
+                            ]]);
+                            rc._bbox = [x + width, sideMinY, x + width + blockRoad, sideMaxY];
+                            roadClaims.push(rc);
+                            centerlineSegments.push([[x + width + blockRoad * 0.5, sideCenterY1], [x + width + blockRoad * 0.5, sideCenterY2]]);
                         }
                     } else {
+                        const xMid = (frontRoadX1 + frontRoadX2) * 0.5;
+                        const cy1 = (countY === 0) ? (y - blockRoad * 0.5) : y;
+                        const cy2 = (countY === plotsPerRow - 1) ? (y + length + blockRoad * 0.5) : (y + length);
+                        centerlineSegments.push([[xMid, cy1], [xMid, cy2]]);
+
                         let sideMinX = Math.min(x, frontRoadX1);
                         let sideMaxX = Math.max(x + width, frontRoadX2);
+                        const sideCenterX1 = Math.min(x, xMid);
+                        const sideCenterX2 = Math.max(x + width, xMid);
                         if (countY === 0) {
-                            roadClaims.push(turf.polygon([[
+                            const rc = turf.polygon([[
                                 [sideMinX, y - blockRoad], [sideMaxX, y - blockRoad],
                                 [sideMaxX, y], [sideMinX, y], [sideMinX, y - blockRoad]
-                            ]]));
+                            ]]);
+                            rc._bbox = [sideMinX, y - blockRoad, sideMaxX, y];
+                            roadClaims.push(rc);
+                            centerlineSegments.push([[sideCenterX1, y - blockRoad * 0.5], [sideCenterX2, y - blockRoad * 0.5]]);
                         }
                         if (countY === plotsPerRow - 1) {
-                            roadClaims.push(turf.polygon([[
+                            const rc = turf.polygon([[
                                 [sideMinX, y + length], [sideMaxX, y + length],
                                 [sideMaxX, y + length + blockRoad], [sideMinX, y + length + blockRoad], [sideMinX, y + length]
-                            ]]));
+                            ]]);
+                            rc._bbox = [sideMinX, y + length, sideMaxX, y + length + blockRoad];
+                            roadClaims.push(rc);
+                            centerlineSegments.push([[sideCenterX1, y + length + blockRoad * 0.5], [sideCenterX2, y + length + blockRoad * 0.5]]);
                         }
                     }
 
                     let isColliding = false;
                     if (existingPlots && existingPlots.length > 0) {
                         const pad = 0.1;
+                        const testBbox = [x + pad, y + pad, x + width - pad, y + length - pad];
                         const testPlot = turf.polygon([[
-                            [x + pad, y + pad], [x + width - pad, y + pad],
-                            [x + width - pad, y + length - pad], [x + pad, y + length - pad], [x + pad, y + pad]
+                            [testBbox[0], testBbox[1]], [testBbox[2], testBbox[1]],
+                            [testBbox[2], testBbox[3]], [testBbox[0], testBbox[3]], [testBbox[0], testBbox[1]]
                         ]]);
 
                         for (let ep of existingPlots) {
-                            if (turf.intersect(testPlot, ep.geometry)) { isColliding = true; break; }
+                            if (ep.bbox && bboxesOverlap(testBbox, ep.bbox)) {
+                                if (turf.intersect(testPlot, ep.geometry)) { isColliding = true; break; }
+                            }
                             if (ep.roadClaims) {
                                 for (let rc of ep.roadClaims) {
-                                    if (turf.intersect(testPlot, rc)) { isColliding = true; break; }
+                                    if (!rc._bbox || bboxesOverlap(testBbox, rc._bbox)) {
+                                        if (turf.intersect(testPlot, rc)) { isColliding = true; break; }
+                                    }
                                 }
                             }
                             if (isColliding) break;
@@ -2073,19 +2828,17 @@
 
                         if (!isColliding) {
                             for (let rc of roadClaims) {
-                                let rCoords = rc.geometry.coordinates[0];
-                                let rMinX = Math.min(rCoords[0][0], rCoords[2][0]);
-                                let rMaxX = Math.max(rCoords[0][0], rCoords[2][0]);
-                                let rMinY = Math.min(rCoords[0][1], rCoords[2][1]);
-                                let rMaxY = Math.max(rCoords[0][1], rCoords[2][1]);
-
+                                let rMinX = rc._bbox[0], rMinY = rc._bbox[1], rMaxX = rc._bbox[2], rMaxY = rc._bbox[3];
+                                const testRoadBbox = [rMinX + pad, rMinY + pad, rMaxX - pad, rMaxY - pad];
                                 const testRoad = turf.polygon([[
-                                    [rMinX + pad, rMinY + pad], [rMaxX - pad, rMinY + pad],
-                                    [rMaxX - pad, rMaxY - pad], [rMinX + pad, rMaxY - pad], [rMinX + pad, rMinY + pad]
+                                    [testRoadBbox[0], testRoadBbox[1]], [testRoadBbox[2], testRoadBbox[1]],
+                                    [testRoadBbox[2], testRoadBbox[3]], [testRoadBbox[0], testRoadBbox[3]], [testRoadBbox[0], testRoadBbox[1]]
                                 ]]);
 
                                 for (let ep of existingPlots) {
-                                    if (turf.intersect(testRoad, ep.geometry)) { isColliding = true; break; }
+                                    if (ep.bbox && bboxesOverlap(testRoadBbox, ep.bbox)) {
+                                        if (turf.intersect(testRoad, ep.geometry)) { isColliding = true; break; }
+                                    }
                                 }
                                 if (isColliding) break;
                             }
@@ -2149,7 +2902,13 @@
                                     }
 
                                     if (hasRoadAccess) {
-                                        generatedPlots.push({ geometry: intersection, area: area, roadClaims: roadClaims });
+                                        generatedPlots.push({
+                                            geometry: intersection,
+                                            area: area,
+                                            roadClaims: roadClaims,
+                                            centerlineSegments: centerlineSegments,
+                                            bbox: [x, y, x + width, y + length]
+                                        });
                                     }
                                 }
                             }
@@ -2193,7 +2952,7 @@
 
         function downloadDXF() {
             if (!globalGeneratedPlots || globalGeneratedPlots.length === 0) {
-                alert("Siteplan belum di-generate atau tidak ada kavling yang terbentuk.");
+                showToast("Siteplan belum di-generate atau tidak ada kavling yang terbentuk.", "error");
                 return;
             }
 
@@ -2222,6 +2981,32 @@
                 dxfString += "0\nSEQEND\n8\n" + layerName + "\n";
             });
 
+            // Ekspor garis tepi rencana jalan lingkungan (ROW) & garis As Jalan ke layer AutoCAD terpisah
+            if (globalGeneratedRoads && globalGeneratedRoads.polygons) {
+                globalGeneratedRoads.polygons.forEach(polyRings => {
+                    polyRings.forEach(ring => {
+                        if (ring.length < 3) return;
+                        dxfString += "0\nPOLYLINE\n8\nJALAN_LINGKUNGAN\n62\n4\n66\n1\n70\n1\n";
+                        for (let i = 0; i < ring.length - 1; i++) {
+                            let origX = (ring[i][0] / globalScale) + globalMinX;
+                            let origY = (ring[i][1] / globalScale) + globalMinY;
+                            dxfString += "0\nVERTEX\n8\nJALAN_LINGKUNGAN\n10\n" + origX.toFixed(6) + "\n20\n" + origY.toFixed(6) + "\n30\n0.0\n";
+                        }
+                        dxfString += "0\nSEQEND\n8\nJALAN_LINGKUNGAN\n";
+                    });
+                });
+            }
+
+            if (globalGeneratedRoads && globalGeneratedRoads.centerlines) {
+                globalGeneratedRoads.centerlines.forEach(seg => {
+                    let x1 = (seg[0][0] / globalScale) + globalMinX;
+                    let y1 = (seg[0][1] / globalScale) + globalMinY;
+                    let x2 = (seg[1][0] / globalScale) + globalMinX;
+                    let y2 = (seg[1][1] / globalScale) + globalMinY;
+                    dxfString += "0\nLINE\n8\nAS_JALAN\n62\n3\n10\n" + x1.toFixed(6) + "\n20\n" + y1.toFixed(6) + "\n30\n0.0\n11\n" + x2.toFixed(6) + "\n21\n" + y2.toFixed(6) + "\n31\n0.0\n";
+                });
+            }
+
             dxfString += "0\nENDSEC\n0\nEOF\n";
 
             const blob = new Blob([dxfString], { type: 'application/dxf' });
@@ -2235,7 +3020,7 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            showToast("File DXF berhasil didownload!");
+            showToast("File DXF (termasuk layer JALAN_LINGKUNGAN & AS_JALAN) berhasil didownload!");
         }
     </script>
 </body>
